@@ -1,0 +1,10 @@
+{
+  "name": "Sonoria",
+  "description": "An immersive interactive audio-visual synthesizer translating sound waves and music into responsive generative digital art, featuring a procedural synthesizer, Air Resonance microphone mode, and Gemini-driven acoustic feedback.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
