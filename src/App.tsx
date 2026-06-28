@@ -14,6 +14,8 @@ import {
   PlusCircle,
   Clock,
   Sparkles,
+  Radio, // Added icon for AI host
+  Globe
 } from 'lucide-react';
 import { Track, EmotionType } from './types';
 import { VISUAL_STYLES } from './visualStylesData';
@@ -28,7 +30,7 @@ import { ZenCapsule } from './components/ZenCapsule';
 const INITIAL_PLAYLIST: Track[] = [
   {
     id: 'ocean-dream',
-    name: '空灵海湾 (Ocean Dream)',
+    name: 'Ocean Dream',
     artist: 'Procedural Luminous Pad',
     src: '',
     isUrl: false,
@@ -37,7 +39,7 @@ const INITIAL_PLAYLIST: Track[] = [
   },
   {
     id: 'binaural-flow',
-    name: '静心冥想 (Binaural Flow)',
+    name: 'Binaural Flow',
     artist: 'Alpha Brainwave Solfeggio',
     src: '',
     isUrl: false,
@@ -46,7 +48,7 @@ const INITIAL_PLAYLIST: Track[] = [
   },
   {
     id: 'forest-fire',
-    name: '林间篝火 (Forest Campfire)',
+    name: 'Forest Campfire',
     artist: 'Procedural Organic Chill',
     src: '',
     isUrl: false,
@@ -55,7 +57,7 @@ const INITIAL_PLAYLIST: Track[] = [
   },
   {
     id: 'space-bell',
-    name: '太空白音 (Space Bell)',
+    name: 'Space Bell',
     artist: 'Delicate Harmonic Resonance',
     src: '',
     isUrl: false,
@@ -79,6 +81,9 @@ export default function App() {
   const [isMicActive, setIsMicActive] = useState<boolean>(false);
   const [isZen, setIsZen] = useState<boolean>(false);
   const [activeDrawer, setActiveDrawer] = useState<'style' | 'playlist' | 'add' | 'code' | null>(null);
+  
+  // AI Host state
+  const [isHostActive, setIsHostActive] = useState<boolean>(false);
 
   // Time & progress tracker
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -107,13 +112,16 @@ export default function App() {
   const albumCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const miniEngineFrameRef = useRef<number | null>(null);
 
+  const ttsAudioContextRef = useRef<AudioContext | null>(null);
+  const currentTtsSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
   // Trigger floating text toasts
   const triggerToast = (text: string) => {
     setToastText(text);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => {
       setToastText(null);
-    }, 2400);
+    }, 4000);
   };
 
   // Autoplay / lazy initialization context
@@ -179,6 +187,89 @@ export default function App() {
     });
   };
 
+  // AI Host Logic
+  const handleAIHost = async (context: 'intro' | 'news' = 'intro', e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    if (isHostActive) {
+       // Stop current speech
+       if (currentTtsSourceRef.current) {
+          currentTtsSourceRef.current.stop();
+       }
+       setIsHostActive(false);
+       triggerToast('Host muted.');
+       return;
+    }
+
+    setIsPlaying(false);
+    ambientSynth.stop();
+    audioElementRef.current?.pause();
+    setIsHostActive(true);
+    triggerToast(context === 'news' ? 'Compiling brief news...' : 'Generating intro...');
+
+    try {
+      const textRes = await fetch('/api/host/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ context, trackName: activeTrack?.name }),
+      });
+      const textData = await textRes.json();
+      
+      if (!textData.text) throw new Error('No text returned');
+
+      triggerToast(textData.text);
+
+      const ttsRes = await fetch('/api/host/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: textData.text }),
+      });
+      const ttsData = await ttsRes.json();
+
+      if (ttsData.audio) {
+        const { ctx: audioCtx, analyser } = await initAudio();
+
+        const binaryString = atob(ttsData.audio);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        const buffer = new Int16Array(bytes.buffer);
+        const audioBuffer = audioCtx.createBuffer(1, buffer.length, 24000);
+        const channelData = audioBuffer.getChannelData(0);
+        for (let i = 0; i < buffer.length; i++) {
+          channelData[i] = buffer[i] / 32768.0;
+        }
+        
+        const source = audioCtx.createBufferSource();
+        source.buffer = audioBuffer;
+        
+        // Connect to our main analyser if we want it to react to the voice!
+        source.connect(analyser);
+
+        currentTtsSourceRef.current = source;
+        source.start();
+        
+        source.onended = () => {
+           setIsHostActive(false);
+           handleTogglePlay(); // resume
+        }
+      } else {
+        console.warn('No audio generated (maybe rate limit exceeded).');
+        // Show text for a few seconds, then resume
+        setTimeout(() => {
+          setIsHostActive(false);
+          handleTogglePlay();
+        }, 4000);
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast('AI Host encountered an error.');
+      setIsHostActive(false);
+      handleTogglePlay();
+    }
+  };
+
   // Sync Album wave indicators on active play
   useEffect(() => {
     const canvas = albumCanvasRef.current;
@@ -190,7 +281,7 @@ export default function App() {
     canvas.height = 110;
 
     const renderMiniWaves = () => {
-      if (!analyserRef.current || !isPlaying) {
+      if (!analyserRef.current || (!isPlaying && !isHostActive && !isMicActive)) {
         // Flat line default state
         ctx.clearRect(0, 0, 110, 110);
         ctx.beginPath();
@@ -237,7 +328,7 @@ export default function App() {
     return () => {
       if (miniEngineFrameRef.current) cancelAnimationFrame(miniEngineFrameRef.current);
     };
-  }, [isPlaying]);
+  }, [isPlaying, isHostActive, isMicActive]);
 
   // General Play / Pause control triggers
   const handleTogglePlay = async (e?: React.MouseEvent) => {
@@ -246,6 +337,11 @@ export default function App() {
     // Shut down mic if active first
     if (isMicActive) {
       handleToggleMic();
+    }
+    
+    if (isHostActive && currentTtsSourceRef.current) {
+       currentTtsSourceRef.current.stop();
+       setIsHostActive(false);
     }
 
     const { ctx, analyser } = await initAudio();
@@ -419,7 +515,7 @@ export default function App() {
   const resetIdleTimer = () => {
     if (isZen) return;
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    if (isPlaying) {
+    if (isPlaying || isHostActive) {
       idleTimerRef.current = setTimeout(() => {
         setIsZen(true);
       }, 7000); // Trigger auto-zen if silent for 7 seconds
@@ -442,7 +538,7 @@ export default function App() {
       window.removeEventListener('mousedown', cleanIdles);
       window.removeEventListener('touchstart', cleanIdles);
     };
-  }, [isPlaying, isZen]);
+  }, [isPlaying, isZen, isHostActive]);
 
   // Format second parameters into 00:00 notation
   const formatTime = (secs: number) => {
@@ -482,7 +578,7 @@ export default function App() {
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-[var(--emotion-color)] transition-colors duration-500 animate-pulse" />
             <span className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-white/50">
-              Sonoria | 听见灵魂
+              miadio | ambient space
             </span>
           </div>
 
@@ -505,31 +601,16 @@ export default function App() {
                   ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
                   : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
-              title="Playlist Manager"
+              title="Private Library"
             >
               <Music className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setActiveDrawer(activeDrawer === 'add' ? null : 'add')}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
-                activeDrawer === 'add'
-                  ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
-                  : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-              }`}
-              title="Import Songs"
+              onClick={(e) => handleAIHost('news', e)}
+              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
+              title="AI News Update"
             >
-              <PlusCircle className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setActiveDrawer(activeDrawer === 'code' ? null : 'code')}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
-                activeDrawer === 'code'
-                  ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
-                  : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
-              }`}
-              title="Developer Terminal"
-            >
-              <Terminal className="w-4 h-4" />
+              <Globe className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -543,10 +624,10 @@ export default function App() {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-5">
             <h1 className="font-display text-xl font-bold text-white leading-tight tracking-wide mb-1">
-              {isMicActive ? 'Air Resonance' : activeTrack?.name || 'Silent Wave'}
+              {isMicActive ? 'Air Resonance' : isHostActive ? 'AI Host Speaking...' : activeTrack?.name || 'Silent Wave'}
             </h1>
             <p className="text-xs text-zinc-400 truncate leading-tight tracking-normal">
-              {isMicActive ? 'Listening to Ambient Microphones...' : activeTrack?.artist || 'Sonoria Audio Laboratory'}
+              {isMicActive ? 'Listening to Ambient Microphones...' : isHostActive ? 'miadio | generative broadcast' : activeTrack?.artist || 'miadio generative audio'}
             </p>
           </div>
 
@@ -561,7 +642,7 @@ export default function App() {
         </div>
 
         {/* Timeline Slider / Progress Track Container */}
-        {!isMicActive && (
+        {!isMicActive && !isHostActive && (
           <div className="space-y-2 mb-6">
             <div
               ref={progressScrubRef}
@@ -587,18 +668,27 @@ export default function App() {
           </div>
         )}
 
+        {/* AI Host Progress Placeholder */}
+        {isHostActive && (
+          <div className="space-y-2 mb-6 h-6 flex items-center">
+             <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                <div className="absolute top-0 left-0 h-full bg-[var(--emotion-color)] w-full animate-[pulse_1s_infinite]" />
+             </div>
+          </div>
+        )}
+
         {/* Player controls deck */}
         <div className="flex items-center justify-between">
           <button
-            onClick={handleToggleMic}
+            onClick={(e) => handleAIHost('intro', e)}
             className={`p-3.5 rounded-full border transition-all outline-none cursor-pointer duration-300 ${
-              isMicActive
-                ? 'bg-red-500/10 border-red-500 text-red-400 rotate-12 scale-105 shadow-md shadow-red-500/10 animate-pulse'
+              isHostActive
+                ? 'bg-[var(--emotion-color)]/20 border-[var(--emotion-color)] text-white shadow-md shadow-[var(--emotion-color)]/20 animate-pulse'
                 : 'bg-white/[0.02] border-white/5 text-zinc-400 hover:text-white hover:border-white/15'
             }`}
-            title="Air Resonance (Mic Mode) [M]"
+            title="AI Host Intro"
           >
-            <Mic className="w-5 h-5" />
+            <Radio className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-3">
@@ -631,7 +721,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Quick interactive random emotion trigger banner */}
           <button
             onClick={() => {
               const styles = VISUAL_STYLES;
@@ -649,11 +738,11 @@ export default function App() {
       {/* 3. Floating Mini player capsule in Zen display mode */}
       <ZenCapsule
         isVisible={isZen}
-        activeTrackName={isMicActive ? 'Air Resonance' : activeTrack?.name || ''}
-        activeTrackArtist={isMicActive ? 'Ambient Frequencies' : activeTrack?.artist || ''}
+        activeTrackName={isMicActive ? 'Air Resonance' : isHostActive ? 'AI Host Speaking...' : activeTrack?.name || ''}
+        activeTrackArtist={isMicActive ? 'Ambient Frequencies' : isHostActive ? 'miadio' : activeTrack?.artist || ''}
         currentTime={currentTime}
         duration={duration}
-        isPlaying={isPlaying}
+        isPlaying={isPlaying || isHostActive}
         onTogglePlay={handleTogglePlay}
         activeEmotion={activeStyleId}
       />
@@ -704,8 +793,8 @@ export default function App() {
 
       {/* 5. Minimalistic Ambient Floating Toast Message */}
       {toastText && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full border border-white/10 bg-black/80 backdrop-blur-md shadow-2xl text-[11px] font-medium text-white/90 tracking-wide flex items-center gap-1.5 animate-fade-in uppercase font-mono">
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--emotion-color)]" />
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-sm w-full text-center px-6 py-3 rounded-2xl border border-white/10 bg-black/80 backdrop-blur-md shadow-2xl text-[12px] font-medium text-white/90 tracking-wide flex items-center justify-center gap-2 animate-fade-in font-sans">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--emotion-color)] flex-shrink-0" />
           {toastText}
         </div>
       )}

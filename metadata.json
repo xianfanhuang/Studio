@@ -1,6 +1,6 @@
 {
-  "name": "Sonoria",
-  "description": "An immersive interactive audio-visual synthesizer translating sound waves and music into responsive generative digital art, featuring a procedural synthesizer, Air Resonance microphone mode, and Gemini-driven acoustic feedback.",
+  "name": "miadio",
+  "description": "An exclusive smart ambient radio built with a personalized private music library, real-time adaptive brief news, and an AI resident host delivering an uninterrupted gentle immersive listening experience.",
   "requestFramePermissions": [
     "microphone"
   ],
