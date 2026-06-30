@@ -10,7 +10,8 @@ const PORT = 3000;
 
 async function startServer() {
   const app = express();
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // API route: AI host text generation (News or Track intro)
   app.post('/api/host/generate', async (req, res) => {
@@ -36,7 +37,7 @@ async function startServer() {
       }
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-3.1-flash-lite',
         contents: prompt,
         config: {
           tools: context === 'news' ? [{ googleSearch: {} }] : undefined,
@@ -47,7 +48,11 @@ async function startServer() {
       res.json({ text: response.text });
 
     } catch (error: any) {
-      console.error('Gemini API Error:', error);
+      if (error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED' || error?.status === 429) {
+        console.warn('Gemini API Rate Limited - using fallback text.');
+      } else {
+        console.error('Gemini API Error:', error);
+      }
       let fallback = 'Welcome back to miadio. Relax and enjoy the ambient frequencies.';
       if (context === 'news') fallback = 'Today brings new discoveries in nature and technology. Stay curious.';
       if (context === 'intro' && trackName) fallback = `Up next is a beautiful track, ${trackName}. Let it wash over you.`;
@@ -92,9 +97,82 @@ async function startServer() {
       }
 
     } catch (error: any) {
-      console.error('Gemini TTS Error:', error);
-      res.status(500).json({ error: error.message || 'Error occurred.' });
+      if (error?.message?.includes('429') || error?.status === 'RESOURCE_EXHAUSTED' || error?.status === 429) {
+        console.warn('Gemini TTS Rate Limited - frontend will fallback to local synthesis.');
+      } else {
+        console.error('Gemini TTS Error:', error);
+      }
+      res.status(429).json({ error: error.message || 'Error occurred.' });
     }
+  });
+
+  // API route: Transcribe and translate audio
+  app.post('/api/transcribe', async (req, res) => {
+    const { audioBase64 } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'Missing key' });
+
+    try {
+      const ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
+      });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { inlineData: { data: audioBase64, mimeType: 'audio/webm' } },
+              { text: 'Transcribe the spoken words in this audio and translate them to Chinese. If there is no clear speech, return empty strings. Do not transcribe musical notes. Format as JSON: {"original": "...", "translation": "..."}' }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              original: { type: Type.STRING },
+              translation: { type: Type.STRING }
+            }
+          }
+        }
+      });
+      res.json(JSON.parse(response.text || '{}'));
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // API route: AI mood sync based on weather/time
+  app.post('/api/host/mood', async (req, res) => {
+    const { weatherCode, isDay, temperature } = req.body;
+    
+    let emotion = 'serene';
+    let styleId = 'aurora';
+    let msg = 'The ambient atmosphere is calm.';
+    
+    if (weatherCode !== undefined) {
+       if (weatherCode <= 3) {
+          if (isDay) {
+             emotion = 'focused'; styleId = 'crystal'; msg = 'A bright, clear day. Sharpening frequencies for focus.';
+          } else {
+             emotion = 'serene'; styleId = 'aurora'; msg = 'A quiet night. Syncing to cosmic serenities.';
+          }
+       } else if (weatherCode >= 51 && weatherCode <= 67) {
+          emotion = 'tender'; styleId = 'liquid'; msg = 'Rainfall detected. Flowing into a tender, liquid state.';
+       } else if (weatherCode >= 71 && weatherCode <= 82) {
+          emotion = 'serene'; styleId = 'bloom'; msg = 'Snowy conditions. Softening the atmosphere.';
+       } else if (weatherCode >= 95) {
+          emotion = 'energized'; styleId = 'vortex'; msg = 'Storm energies detected. Enhancing resonance for a vibrant pulse.';
+       } else {
+          emotion = 'focused'; styleId = 'nebula'; msg = 'Misty conditions. Drifting into a nebula of sound.';
+       }
+    }
+    
+    res.json({ emotion, styleId, message: msg });
   });
 
   // Proxy Gemini emotional visual rendering requests (legacy)

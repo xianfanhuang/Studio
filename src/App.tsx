@@ -15,7 +15,9 @@ import {
   Clock,
   Sparkles,
   Radio, // Added icon for AI host
-  Globe
+  Globe,
+  Cloud,
+  Captions
 } from 'lucide-react';
 import { Track, EmotionType } from './types';
 import { VISUAL_STYLES } from './visualStylesData';
@@ -28,6 +30,30 @@ import { CodeDrawer, DEFAULT_SAMPLE_CODE } from './components/CodeDrawer';
 import { ZenCapsule } from './components/ZenCapsule';
 
 const INITIAL_PLAYLIST: Track[] = [
+  {
+    id: 'soma-groovesalad',
+    name: 'SomaFM: Groove Salad',
+    artist: 'Global Radio - Downtempo/Chill',
+    src: 'https://ice1.somafm.com/groovesalad-128-mp3',
+    isUrl: true,
+    isSynthesized: false,
+  },
+  {
+    id: 'soma-dronezone',
+    name: 'SomaFM: Drone Zone',
+    artist: 'Global Radio - Ambient Space',
+    src: 'https://ice1.somafm.com/dronezone-128-mp3',
+    isUrl: true,
+    isSynthesized: false,
+  },
+  {
+    id: 'kexp-seattle',
+    name: 'KEXP 90.3 FM',
+    artist: 'Global Radio - Seattle Indie',
+    src: 'https://kexp-mp3-128.streamguys1.com/kexp128.mp3',
+    isUrl: true,
+    isSynthesized: false,
+  },
   {
     id: 'ocean-dream',
     name: 'Ocean Dream',
@@ -84,6 +110,13 @@ export default function App() {
   
   // AI Host state
   const [isHostActive, setIsHostActive] = useState<boolean>(false);
+
+  // CC (Smart Subtitles) state
+  const [isCcActive, setIsCcActive] = useState<boolean>(false);
+  const [subtitle, setSubtitle] = useState<{original: string, translation: string} | null>(null);
+  const isCcActiveRef = useRef<boolean>(false);
+  const ccRecorderRef = useRef<MediaRecorder | null>(null);
+  const ccDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
 
   // Time & progress tracker
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -187,6 +220,57 @@ export default function App() {
     });
   };
 
+  // Mood Sync Logic
+  const handleSyncMood = async (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    
+    triggerToast('Analyzing environmental atmosphere...');
+    
+    if (!navigator.geolocation) {
+       triggerToast('Geolocation not supported by this browser.');
+       return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(async (position) => {
+       try {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+          const weatherData = await weatherRes.json();
+          
+          if (weatherData.current_weather) {
+             const { weathercode, is_day, temperature } = weatherData.current_weather;
+             const moodRes = await fetch('/api/host/mood', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ weatherCode: weathercode, isDay: is_day, temperature })
+             });
+             const moodData = await moodRes.json();
+             
+             if (moodData.styleId && moodData.emotion) {
+                setActiveStyleId(moodData.styleId);
+                setActiveEmotion(moodData.emotion);
+                triggerToast(moodData.message || 'Mood synchronized.');
+                
+                // Also update synth if running
+                if (isPlaying && activeTrack?.isSynthesized && audioContextRef.current) {
+                   (audioContextRef.current as any).emotion = moodData.emotion;
+                   ambientSynth.stop();
+                   ambientSynth.start(audioContextRef.current, analyserRef.current!, moodData.emotion);
+                }
+             }
+          } else {
+             triggerToast('Weather data unavailable.');
+          }
+       } catch (err) {
+          console.error('Mood sync error:', err);
+          triggerToast('Failed to sync environment.');
+       }
+    }, () => {
+       triggerToast('Location access denied. Cannot sync mood.');
+    });
+  };
+
   // AI Host Logic
   const handleAIHost = async (context: 'intro' | 'news' = 'intro', e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -207,6 +291,7 @@ export default function App() {
     setIsHostActive(true);
     triggerToast(context === 'news' ? 'Compiling brief news...' : 'Generating intro...');
 
+    let spokenText = 'Reconnecting to miadio frequencies...';
     try {
       const textRes = await fetch('/api/host/generate', {
         method: 'POST',
@@ -215,14 +300,16 @@ export default function App() {
       });
       const textData = await textRes.json();
       
-      if (!textData.text) throw new Error('No text returned');
+      if (textData.text) {
+         spokenText = textData.text;
+      }
 
-      triggerToast(textData.text);
+      triggerToast(spokenText);
 
       const ttsRes = await fetch('/api/host/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: textData.text }),
+        body: JSON.stringify({ text: spokenText }),
       });
       const ttsData = await ttsRes.json();
 
@@ -255,18 +342,106 @@ export default function App() {
            handleTogglePlay(); // resume
         }
       } else {
-        console.warn('No audio generated (maybe rate limit exceeded).');
-        // Show text for a few seconds, then resume
+        throw new Error('TTS Rate Limited');
+      }
+    } catch (err) {
+      console.warn('AI Host error, falling back to local TTS:', err);
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(spokenText);
+        utterance.rate = 0.95;
+        utterance.pitch = 0.95;
+        utterance.onend = () => {
+          setIsHostActive(false);
+          handleTogglePlay();
+        };
+        utterance.onerror = () => {
+          setIsHostActive(false);
+          handleTogglePlay();
+        }
+        window.speechSynthesis.speak(utterance);
+      } else {
         setTimeout(() => {
           setIsHostActive(false);
           handleTogglePlay();
         }, 4000);
       }
-    } catch (err) {
-      console.error(err);
-      triggerToast('AI Host encountered an error.');
-      setIsHostActive(false);
-      handleTogglePlay();
+    }
+  };
+
+  // CC Loop Logic
+  const runCCLoop = async () => {
+    const { ctx, analyser } = await initAudio();
+
+    if (!ccDestRef.current) {
+      ccDestRef.current = ctx.createMediaStreamDestination();
+      analyser.connect(ccDestRef.current);
+    }
+
+    const recordAndTranscribe = () => {
+      if (!isCcActiveRef.current || !ccDestRef.current) return;
+
+      const recorder = new MediaRecorder(ccDestRef.current.stream, { mimeType: 'audio/webm' });
+      ccRecorderRef.current = recorder;
+      let chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = () => {
+        if (chunks.length === 0) return;
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+          const result = reader.result as string;
+          const base64data = result.split(',')[1];
+          try {
+            const res = await fetch('/api/transcribe', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ audioBase64: base64data })
+            });
+            const data = await res.json();
+            if (data && (data.original || data.translation)) {
+              if (data.original.length > 2) {
+                setSubtitle({ original: data.original, translation: data.translation });
+              }
+            }
+          } catch (e) {
+            console.warn('Transcription rate limit or error');
+          }
+        };
+
+        if (isCcActiveRef.current) {
+          recordAndTranscribe();
+        }
+      };
+
+      recorder.start();
+      setTimeout(() => {
+        if (recorder.state === 'recording') recorder.stop();
+      }, 8000); // Record in 8-second chunks
+    };
+
+    recordAndTranscribe();
+  };
+
+  const handleToggleCC = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    isCcActiveRef.current = !isCcActiveRef.current;
+    setIsCcActive(isCcActiveRef.current);
+
+    if (isCcActiveRef.current) {
+      triggerToast('Smart Subtitles Enabled');
+      runCCLoop();
+    } else {
+      triggerToast('Smart Subtitles Disabled');
+      if (ccRecorderRef.current && ccRecorderRef.current.state === 'recording') {
+        ccRecorderRef.current.stop();
+      }
+      setSubtitle(null);
     }
   };
 
@@ -365,9 +540,11 @@ export default function App() {
         // Traditional files
         audioElementRef.current.src = activeTrack.src;
         audioElementRef.current.play().catch((err) => {
-          console.error(err);
-          triggerToast('Playback blocked. Tap play again.');
-          setIsPlaying(false);
+          if (err.name !== 'AbortError') {
+            console.error(err);
+            triggerToast('Playback blocked. Tap play again.');
+            setIsPlaying(false);
+          }
         });
       }
     }
@@ -445,8 +622,10 @@ export default function App() {
         setDuration(120);
       } else if (audioElementRef.current) {
         audioElementRef.current.src = nextTrack.src;
-        audioElementRef.current.play().catch(() => {
-          setIsPlaying(false);
+        audioElementRef.current.play().catch((err) => {
+          if (err.name !== 'AbortError') {
+            setIsPlaying(false);
+          }
         });
       }
     }, 150);
@@ -606,11 +785,29 @@ export default function App() {
               <Music className="w-4 h-4" />
             </button>
             <button
+              onClick={(e) => handleSyncMood(e)}
+              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
+              title="Mood Sync"
+            >
+              <Cloud className="w-4 h-4" />
+            </button>
+            <button
               onClick={(e) => handleAIHost('news', e)}
               className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
               title="AI News Update"
             >
               <Globe className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleToggleCC}
+              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
+                isCcActive
+                  ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
+                  : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
+              title="Smart Subtitles (Translate to Chinese)"
+            >
+              <Captions className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -790,6 +987,20 @@ export default function App() {
         onSetEmotion={setActiveEmotion}
         onToast={triggerToast}
       />
+
+      {/* Smart Subtitles Overlay */}
+      {isCcActive && subtitle && (
+        <div className="absolute bottom-40 left-1/2 -translate-x-1/2 w-full max-w-2xl text-center pointer-events-none z-40 flex flex-col gap-1.5 px-4 animate-fade-in">
+          <div className="font-sans text-xl font-medium text-white px-5 py-2.5 bg-black/60 backdrop-blur-md rounded-xl inline-block mx-auto border border-white/5 shadow-2xl">
+            {subtitle.original}
+          </div>
+          {subtitle.translation && (
+            <div className="font-sans text-[13px] font-normal text-white/70 px-4 py-1.5 bg-black/50 backdrop-blur-md rounded-lg inline-block mx-auto border border-white/5">
+              {subtitle.translation}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 5. Minimalistic Ambient Floating Toast Message */}
       {toastText && (
