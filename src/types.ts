@@ -1,5 +1,12 @@
 export type EmotionType = 'serene' | 'energized' | 'tender' | 'focused';
 
+export interface EmotionPalette {
+  h: number;
+  s: number;
+  l: number;
+  rgb: [number, number, number];
+}
+
 export interface VisualStyle {
   id: string;
   name: string;
@@ -8,18 +15,6 @@ export interface VisualStyle {
   description: string;
   emotion: EmotionType;
   gpuReq: 'low' | 'medium' | 'high';
-  render?: (
-    ctx: CanvasRenderingContext2D,
-    W: number,
-    H: number,
-    time: number,
-    low: number,
-    mid: number,
-    high: number,
-    energy: number,
-    data: Uint8Array,
-    hue: number
-  ) => void;
 }
 
 export interface Track {
@@ -30,6 +25,24 @@ export interface Track {
   isUrl: boolean;
   isSynthesized?: boolean;
   synthType?: 'sine' | 'ambient' | 'chill' | 'binaural';
+}
+
+export interface Subtitle {
+  original: string;
+  translation: string;
+}
+
+export interface AIResponse {
+  text?: string;
+  audio?: string;
+  error?: string;
+}
+
+export interface Bands {
+  low: number;
+  mid: number;
+  high: number;
+  energy: number;
 }
 
 export interface PlaybackState {

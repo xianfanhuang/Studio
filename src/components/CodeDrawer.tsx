@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, Send, Sparkles, RefreshCw, X, Play, ShieldAlert } from 'lucide-react';
+import { Terminal, Send, Sparkles, RefreshCw, X, Play, ShieldAlert, Loader2 } from 'lucide-react';
 import { EmotionType } from '../types';
 
 interface CodeDrawerProps {
@@ -153,6 +153,7 @@ export const CodeDrawer: React.FC<CodeDrawerProps> = ({
         </div>
         <button
           onClick={onClose}
+          aria-label="Close Code Drawer"
           className="p-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
@@ -256,12 +257,13 @@ export const CodeDrawer: React.FC<CodeDrawerProps> = ({
 
               <button
                 onClick={handleGenerateAiCode}
+                aria-label="Generate Math Canvas from Mood"
                 disabled={isLoading || !prompt.trim()}
                 className="w-full py-2.5 bg-gradient-to-r from-violet-500 to-[var(--emotion-color)] rounded-lg font-medium text-black text-xs hover:opacity-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shadow-lg shadow-violet-500/10"
               >
                 {isLoading ? (
                   <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     编织中 Weaving algorithms...
                   </>
                 ) : (

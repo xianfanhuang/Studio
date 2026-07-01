@@ -1,5 +1,17 @@
 import React, { useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { EmotionType, VisualStyle } from '../types';
+import { EmotionType, EmotionPalette, Bands } from '../types';
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  opacity: number;
+  life: number;
+  decay: number;
+  hueOff: number;
+}
 
 interface VisualizerCanvasProps {
   analyser: AnalyserNode | null;
@@ -12,10 +24,10 @@ interface VisualizerCanvasProps {
 
 export interface VisualizerHandle {
   setBeatFlash: () => void;
-  getAnalyseData: () => { low: number; mid: number; high: number; energy: number };
+  getAnalyseData: () => Bands;
 }
 
-const EMOTION_PALETTES = {
+const EMOTION_PALETTES: Record<EmotionType, EmotionPalette> = {
   serene: { h: 174, s: 100, l: 45, rgb: [0, 229, 204] },
   energized: { h: 43, s: 90, l: 55, rgb: [240, 180, 41] },
   tender: { h: 340, s: 100, l: 65, rgb: [255, 107, 157] },
@@ -23,12 +35,12 @@ const EMOTION_PALETTES = {
 };
 
 export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasProps>(
-  ({ analyser, mode, emotion, customJsCode, isCustomCodeActive, onEmotionChange }, ref) => {
+  ({ analyser, mode, emotion, customJsCode, isCustomCodeActive }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const animationFrameRef = useRef<number | null>(null);
 
     // Particle system state
-    const particlesRef = useRef<any[]>([]);
+    const particlesRef = useRef<Particle[]>([]);
     const maxParticles = 120;
 
     // Beat analysis variables
@@ -38,6 +50,10 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
 
     // Dynamic HSL interpolation
     const currentHueRef = useRef<number>(EMOTION_PALETTES[emotion].h);
+
+    // Cached custom code function
+    const compiledCodeRef = useRef<Function | null>(null);
+    const lastCompiledCodeRef = useRef<string>('');
 
     // Matrix Rain State
     const matrixState = useRef<{ drops: number[]; colW: number } | null>(null);
@@ -82,7 +98,7 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
     }, []);
 
     // Create single particles
-    const createParticle = (isRandom: boolean) => {
+    const createParticle = (isRandom: boolean): Particle => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       const angle = Math.random() * Math.PI * 2;
@@ -112,7 +128,7 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
     }));
 
     // Analyze byte frequencies
-    const getBands = () => {
+    const getBands = (): Bands => {
       if (!analyser) {
         return { low: 0.2, mid: 0.2, high: 0.2, energy: 0.2 };
       }
@@ -210,7 +226,7 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
       W: number,
       H: number,
       time: number,
-      bands: any,
+      bands: Bands,
       dataArray: Uint8Array
     ) => {
       // Clear frame
@@ -218,6 +234,15 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
       ctx.fillRect(0, 0, W, H);
 
       try {
+        // Compile only if code changed
+        if (compiledCodeRef.current === null || lastCompiledCodeRef.current !== customJsCode) {
+          compiledCodeRef.current = new Function(
+            'ctx', 'W', 'H', 'time', 'low', 'mid', 'high', 'energy', 'data', 'hue', 'flash',
+            customJsCode
+          );
+          lastCompiledCodeRef.current = customJsCode;
+        }
+
         // Expose variables for users to manipulate!
         const hue = currentHueRef.current;
         const low = bands.low;
@@ -226,9 +251,8 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
         const energy = bands.energy;
         const flash = beatFlashRef.current;
 
-        // Evaluate custom code context
-        const fn = new Function('ctx', 'W', 'H', 'time', 'low', 'mid', 'high', 'energy', 'data', 'hue', 'flash', customJsCode);
-        fn(ctx, W, H, time, low, mid, high, energy, dataArray, hue, flash);
+        // Execute cached custom code
+        compiledCodeRef.current(ctx, W, H, time, low, mid, high, energy, dataArray, hue, flash);
       } catch (err: any) {
         // Red error line indicators
         ctx.fillStyle = '#ff3b30';
@@ -243,7 +267,7 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
       W: number,
       H: number,
       time: number,
-      bands: any,
+      bands: Bands,
       dataArray: Uint8Array
     ) => {
       const hue = currentHueRef.current;

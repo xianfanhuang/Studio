@@ -1,11 +1,13 @@
 // Procedural ambient synthesizer using Web Audio API
+import { EmotionType } from './types';
 
 class AmbientSynth {
   private ctx: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private isRunning: boolean = false;
-  private nodes: AudioNode[] = [];
-  private timers: any[] = [];
+  private nodes: (OscillatorNode | GainNode | BiquadFilterNode)[] = [];
+  private timers: ReturnType<typeof setTimeout>[] = [];
+  private currentEmotion: EmotionType = 'serene';
   
   // Oscillators and gains for nodes
   private padOscs: OscillatorNode[] = [];
@@ -15,11 +17,16 @@ class AmbientSynth {
 
   constructor() {}
 
-  start(ctx: AudioContext, analyser: AnalyserNode, emotion: 'serene' | 'energized' | 'tender' | 'focused' = 'serene') {
+  setEmotion(emotion: EmotionType) {
+    this.currentEmotion = emotion;
+  }
+
+  start(ctx: AudioContext, analyser: AnalyserNode, emotion: EmotionType = 'serene') {
     this.stop();
     this.ctx = ctx;
     this.analyser = analyser;
     this.isRunning = true;
+    this.currentEmotion = emotion;
 
     try {
       this.setupSynth(emotion);
@@ -45,7 +52,9 @@ class AmbientSynth {
     // Stop and disconnect all active audio nodes
     this.nodes.forEach(node => {
       try {
-        (node as any).stop?.();
+        if ('stop' in node) {
+          (node as OscillatorNode).stop();
+        }
       } catch (e) {}
       try {
         node.disconnect();
@@ -67,7 +76,7 @@ class AmbientSynth {
     }
   }
 
-  private setupSynth(emotion: 'serene' | 'energized' | 'tender' | 'focused') {
+  private setupSynth(emotion: EmotionType) {
     if (!this.ctx || !this.analyser) return;
 
     const ctx = this.ctx;
@@ -133,20 +142,19 @@ class AmbientSynth {
   // Generates warm organic chord pad swells
   private playMellowChordSwells(baseFreq: number, dest: AudioNode, delay: AudioNode) {
     if (!this.isRunning || !this.ctx) return;
-    const ctx = this.ctx;
 
     // Chords intervals relative to base freq
     const major7th = [1, 1.25, 1.5, 1.875]; // Root, M3, P5, M7
     const minor7th = [1, 1.1892, 1.5, 1.7818]; // Root, m3, P5, m7
     const sus2 = [1, 1.122, 1.5, 2.0]; // Root, M2, P5, Octave
 
-    const progressions = {
+    const progressions: Record<string, number[][]> = {
       serene: [minor7th, sus2, minor7th, sus2],
       tender: [major7th, minor7th, major7th, minor7th],
       focused: [minor7th, minor7th, minor7th, minor7th]
-    } as any;
+    };
 
-    const progression = progressions[(this.ctx as any).emotion || 'serene'] || major7th;
+    const progression = progressions[this.currentEmotion] || [major7th];
     let chordIdx = 0;
 
     const swellLoop = () => {
@@ -187,8 +195,8 @@ class AmbientSynth {
         o.start(now);
         o.stop(now + attack + sustain + release + 0.1);
 
-        this.nodes.push(o as any);
-        this.nodes.push(g as any);
+        this.nodes.push(o);
+        this.nodes.push(g);
       });
 
       this.timers.push(setTimeout(swellLoop, totalDuration - 2000));
@@ -200,7 +208,6 @@ class AmbientSynth {
   // Energized patterns - arpeggiations, pulsing beats
   private playRhythmicArpeggio(baseFreq: number, dest: AudioNode, delay: AudioNode) {
     if (!this.isRunning || !this.ctx) return;
-    const ctx = this.ctx;
 
     // Pentatonic scale multipliers
     const pentatonic = [1, 1.122, 1.25, 1.5, 1.682, 2.0];
@@ -237,8 +244,8 @@ class AmbientSynth {
       o.start(now);
       o.stop(now + 0.5);
 
-      this.nodes.push(o as any);
-      this.nodes.push(g as any);
+      this.nodes.push(o);
+      this.nodes.push(g);
 
       // Metronome kick pulse
       if (noteCount % 4 === 0) {
@@ -258,8 +265,8 @@ class AmbientSynth {
         kickOsc.start(now);
         kickOsc.stop(now + 0.25);
 
-        this.nodes.push(kickOsc as any);
-        this.nodes.push(kickGain as any);
+        this.nodes.push(kickOsc);
+        this.nodes.push(kickGain);
       }
 
       this.timers.push(setTimeout(arpLoop, 220)); // ~136 BPM
@@ -305,8 +312,8 @@ class AmbientSynth {
       osc.start(now);
       osc.stop(now + 2.6);
 
-      this.nodes.push(osc as any);
-      this.nodes.push(gain as any);
+      this.nodes.push(osc);
+      this.nodes.push(gain);
 
       this.timers.push(setTimeout(bellLoop, nextTime));
     };
