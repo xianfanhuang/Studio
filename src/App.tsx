@@ -17,9 +17,10 @@ import {
   Radio, // Added icon for AI host
   Globe,
   Cloud,
-  Captions
+  Captions,
+  Loader2
 } from 'lucide-react';
-import { Track, EmotionType } from './types';
+import { Track, EmotionType, Subtitle, AIResponse } from './types';
 import { VISUAL_STYLES } from './visualStylesData';
 import { ambientSynth } from './ambientSynth';
 import { VisualizerCanvas, VisualizerHandle } from './components/VisualizerCanvas';
@@ -28,6 +29,7 @@ import { PlaylistDrawer } from './components/PlaylistDrawer';
 import { AddMusicDrawer } from './components/AddMusicDrawer';
 import { CodeDrawer, DEFAULT_SAMPLE_CODE } from './components/CodeDrawer';
 import { ZenCapsule } from './components/ZenCapsule';
+import { useAudioEngine } from './hooks/useAudioEngine';
 
 const INITIAL_PLAYLIST: Track[] = [
   {
@@ -93,6 +95,13 @@ const INITIAL_PLAYLIST: Track[] = [
 ];
 
 export default function App() {
+  const {
+    audioContextRef,
+    analyserRef,
+    audioElementRef,
+    initAudio,
+  } = useAudioEngine();
+
   // Playlist & Active Track
   const [playlist, setPlaylist] = useState<Track[]>(INITIAL_PLAYLIST);
   const [trackIdx, setTrackIdx] = useState<number>(0);
@@ -110,10 +119,11 @@ export default function App() {
   
   // AI Host state
   const [isHostActive, setIsHostActive] = useState<boolean>(false);
+  const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
 
   // CC (Smart Subtitles) state
   const [isCcActive, setIsCcActive] = useState<boolean>(false);
-  const [subtitle, setSubtitle] = useState<{original: string, translation: string} | null>(null);
+  const [subtitle, setSubtitle] = useState<Subtitle | null>(null);
   const isCcActiveRef = useRef<boolean>(false);
   const ccRecorderRef = useRef<MediaRecorder | null>(null);
   const ccDestRef = useRef<MediaStreamAudioDestinationNode | null>(null);
@@ -128,19 +138,15 @@ export default function App() {
 
   // Toast notification
   const [toastText, setToastText] = useState<string | null>(null);
-  const toastTimerRef = useRef<any>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Idle timer to enter Zen mode automatically
-  const idleTimerRef = useRef<any>(null);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progressScrubRef = useRef<HTMLDivElement | null>(null);
 
   // Audio References
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const micSourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const visualizerRef = useRef<VisualizerHandle | null>(null);
   const albumCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const miniEngineFrameRef = useRef<number | null>(null);
@@ -157,68 +163,30 @@ export default function App() {
     }, 4000);
   };
 
-  // Autoplay / lazy initialization context
-  const initAudio = (): Promise<{ ctx: AudioContext; analyser: AnalyserNode }> => {
-    return new Promise((resolve) => {
-      if (audioContextRef.current && analyserRef.current) {
-        resolve({ ctx: audioContextRef.current, analyser: analyserRef.current });
-        return;
-      }
+  // Bind audio element listeners
+  useEffect(() => {
+    if (!audioElementRef.current) return;
+    const el = audioElementRef.current;
 
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioContextClass();
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256; // Smaller fftSize for snappy UI graphs
-      analyser.smoothingTimeConstant = 0.75;
+    el.ontimeupdate = () => {
+      if (!el.duration) return;
+      setCurrentTime(el.currentTime);
+    };
 
-      audioContextRef.current = ctx;
-      analyserRef.current = analyser;
+    el.onloadedmetadata = () => {
+      setDuration(el.duration);
+      setCurrentTime(el.currentTime);
+    };
 
-      // Link static AudioElement straight away
-      const el = new Audio();
-      el.crossOrigin = 'anonymous';
-      audioElementRef.current = el;
+    el.onended = () => {
+      handleSkip(1);
+    };
 
-      // Bind audio element listeners
-      el.ontimeupdate = () => {
-        if (!el.duration) return;
-        setCurrentTime(el.currentTime);
-      };
-
-      el.onloadedmetadata = () => {
-        setDuration(el.duration);
-        setCurrentTime(el.currentTime);
-      };
-
-      el.onended = () => {
-        handleSkip(1);
-      };
-
-      el.onerror = () => {
-        triggerToast('Failed to load online streaming file.');
-        setIsPlaying(false);
-      };
-
-      // Connect MediaElementSource once
-      try {
-        const source = ctx.createMediaElementSource(el);
-        source.connect(analyser);
-        analyser.connect(ctx.destination);
-        mediaSourceRef.current = source;
-      } catch (e) {
-        console.warn('Media element proxy connection:', e);
-      }
-
-      // Check suspended states (Chrome autoplay policy)
-      if (ctx.state === 'suspended') {
-        ctx.resume().then(() => {
-          resolve({ ctx, analyser });
-        });
-      } else {
-        resolve({ ctx, analyser });
-      }
-    });
-  };
+    el.onerror = () => {
+      triggerToast('Failed to load online streaming file.');
+      setIsPlaying(false);
+    };
+  }, [audioElementRef.current]);
 
   // Mood Sync Logic
   const handleSyncMood = async (e?: React.MouseEvent) => {
@@ -253,10 +221,10 @@ export default function App() {
                 triggerToast(moodData.message || 'Mood synchronized.');
                 
                 // Also update synth if running
-                if (isPlaying && activeTrack?.isSynthesized && audioContextRef.current) {
-                   (audioContextRef.current as any).emotion = moodData.emotion;
+                if (isPlaying && activeTrack?.isSynthesized && audioContextRef.current && analyserRef.current) {
+                   ambientSynth.setEmotion(moodData.emotion);
                    ambientSynth.stop();
-                   ambientSynth.start(audioContextRef.current, analyserRef.current!, moodData.emotion);
+                   ambientSynth.start(audioContextRef.current, analyserRef.current, moodData.emotion);
                 }
              }
           } else {
@@ -289,6 +257,7 @@ export default function App() {
     ambientSynth.stop();
     audioElementRef.current?.pause();
     setIsHostActive(true);
+    setIsAiLoading(true);
     triggerToast(context === 'news' ? 'Compiling brief news...' : 'Generating intro...');
 
     let spokenText = 'Reconnecting to miadio frequencies...';
@@ -314,6 +283,7 @@ export default function App() {
       const ttsData = await ttsRes.json();
 
       if (ttsData.audio) {
+        setIsAiLoading(false);
         const { ctx: audioCtx, analyser } = await initAudio();
 
         const binaryString = atob(ttsData.audio);
@@ -345,6 +315,7 @@ export default function App() {
         throw new Error('TTS Rate Limited');
       }
     } catch (err) {
+      setIsAiLoading(false);
       console.warn('AI Host error, falling back to local TTS:', err);
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(spokenText);
@@ -503,7 +474,7 @@ export default function App() {
     return () => {
       if (miniEngineFrameRef.current) cancelAnimationFrame(miniEngineFrameRef.current);
     };
-  }, [isPlaying, isHostActive, isMicActive]);
+  }, [isPlaying, isHostActive, isMicActive, analyserRef.current]);
 
   // General Play / Pause control triggers
   const handleTogglePlay = async (e?: React.MouseEvent) => {
@@ -531,7 +502,6 @@ export default function App() {
       setIsPlaying(true);
       if (activeTrack?.isSynthesized) {
         // Procedural synthetics routing
-        (ctx as any).emotion = activeEmotion;
         ambientSynth.start(ctx, analyser, activeEmotion);
         setCurrentTime(0);
         setDuration(120); // Infinite placeholder duration
@@ -616,7 +586,6 @@ export default function App() {
       const nextTrack = playlist[nextIdx];
 
       if (nextTrack.isSynthesized) {
-        (ctx as any).emotion = activeEmotion;
         ambientSynth.start(ctx, analyser, activeEmotion);
         setCurrentTime(0);
         setDuration(120);
@@ -764,50 +733,55 @@ export default function App() {
           <div className="flex gap-2">
             <button
               onClick={() => setActiveDrawer(activeDrawer === 'style' ? null : 'style')}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
+              aria-label="Toggle Visual Styles Drawer"
+              className={`p-2 md:p-2.5 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
                 activeDrawer === 'style'
                   ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
                   : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
               title="Visual Styles"
             >
-              <Palette className="w-4 h-4" />
+              <Palette className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={() => setActiveDrawer(activeDrawer === 'playlist' ? null : 'playlist')}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
+              aria-label="Toggle Playlist Drawer"
+              className={`p-2 md:p-2.5 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
                 activeDrawer === 'playlist'
                   ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
                   : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
               title="Private Library"
             >
-              <Music className="w-4 h-4" />
+              <Music className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={(e) => handleSyncMood(e)}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
+              aria-label="Synchronize Mood with Weather"
+              className={`p-2 md:p-2.5 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
               title="Mood Sync"
             >
-              <Cloud className="w-4 h-4" />
+              <Cloud className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={(e) => handleAIHost('news', e)}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
+              aria-label="Get AI News Update"
+              className={`p-2 md:p-2.5 rounded-xl bg-white/[0.02] border transition-all cursor-pointer border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]`}
               title="AI News Update"
             >
-              <Globe className="w-4 h-4" />
+              <Globe className="w-4 h-4 md:w-5 md:h-5" />
             </button>
             <button
               onClick={handleToggleCC}
-              className={`p-2 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
+              aria-label="Toggle Smart Subtitles"
+              className={`p-2 md:p-2.5 rounded-xl bg-white/[0.02] border transition-all cursor-pointer ${
                 isCcActive
                   ? 'border-[var(--emotion-color)] text-[var(--emotion-color)]'
                   : 'border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
               title="Smart Subtitles (Translate to Chinese)"
             >
-              <Captions className="w-4 h-4" />
+              <Captions className="w-4 h-4 md:w-5 md:h-5" />
             </button>
           </div>
         </div>
@@ -821,7 +795,7 @@ export default function App() {
 
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent flex flex-col justify-end p-5">
             <h1 className="font-display text-xl font-bold text-white leading-tight tracking-wide mb-1">
-              {isMicActive ? 'Air Resonance' : isHostActive ? 'AI Host Speaking...' : activeTrack?.name || 'Silent Wave'}
+              {isMicActive ? 'Air Resonance' : isHostActive ? (isAiLoading ? 'AI Host Thinking...' : 'AI Host Speaking...') : activeTrack?.name || 'Silent Wave'}
             </h1>
             <p className="text-xs text-zinc-400 truncate leading-tight tracking-normal">
               {isMicActive ? 'Listening to Ambient Microphones...' : isHostActive ? 'miadio | generative broadcast' : activeTrack?.artist || 'miadio generative audio'}
@@ -869,7 +843,7 @@ export default function App() {
         {isHostActive && (
           <div className="space-y-2 mb-6 h-6 flex items-center">
              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
-                <div className="absolute top-0 left-0 h-full bg-[var(--emotion-color)] w-full animate-[pulse_1s_infinite]" />
+                <div className={`absolute top-0 left-0 h-full bg-[var(--emotion-color)] w-full ${isAiLoading ? 'animate-[shimmer_2s_infinite]' : 'animate-[pulse_1s_infinite]'}`} />
              </div>
           </div>
         )}
@@ -878,43 +852,47 @@ export default function App() {
         <div className="flex items-center justify-between">
           <button
             onClick={(e) => handleAIHost('intro', e)}
-            className={`p-3.5 rounded-full border transition-all outline-none cursor-pointer duration-300 ${
+            aria-label="Trigger AI Host Introduction"
+            className={`p-3.5 md:p-4 rounded-full border transition-all outline-none cursor-pointer duration-300 ${
               isHostActive
                 ? 'bg-[var(--emotion-color)]/20 border-[var(--emotion-color)] text-white shadow-md shadow-[var(--emotion-color)]/20 animate-pulse'
                 : 'bg-white/[0.02] border-white/5 text-zinc-400 hover:text-white hover:border-white/15'
             }`}
             title="AI Host Intro"
           >
-            <Radio className="w-5 h-5" />
+            {isAiLoading ? <Loader2 className="w-5 h-5 md:w-6 md:h-6 animate-spin" /> : <Radio className="w-5 h-5 md:w-6 md:h-6" />}
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 md:gap-5">
             <button
               onClick={() => handleSkip(-1)}
-              className="p-3.5 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Previous Track"
+              className="p-3.5 md:p-4 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
               title="Prev Track"
             >
-              <SkipBack className="w-5 h-5 fill-zinc-450" />
+              <SkipBack className="w-5 h-5 md:w-6 md:h-6 fill-zinc-450" />
             </button>
 
             <button
               onClick={() => handleTogglePlay()}
-              className="w-14 h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 shadow-lg shadow-[var(--emotion-glow)] select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 shadow-lg shadow-[var(--emotion-glow)] select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
               title="Play / Pause [Space]"
             >
               {isPlaying ? (
-                <Pause className="w-6 h-6 fill-black stroke-black" />
+                <Pause className="w-6 h-6 md:w-7 md:h-7 fill-black stroke-black" />
               ) : (
-                <Play className="w-6 h-6 fill-black ml-1 stroke-black" />
+                <Play className="w-6 h-6 md:w-7 md:h-7 fill-black ml-1 stroke-black" />
               )}
             </button>
 
             <button
               onClick={() => handleSkip(1)}
-              className="p-3.5 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              aria-label="Next Track"
+              className="p-3.5 md:p-4 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
               title="Next Track"
             >
-              <SkipForward className="w-5 h-5 fill-zinc-450" />
+              <SkipForward className="w-5 h-5 md:w-6 md:h-6 fill-zinc-450" />
             </button>
           </div>
 
@@ -924,10 +902,11 @@ export default function App() {
               const pick = styles[Math.floor(Math.random() * styles.length)];
               handleSelectStyle(pick.id);
             }}
-            className="p-3.5 rounded-full bg-white/[0.02] border border-white/5 text-zinc-450 hover:text-white hover:border-white/15 transition-all cursor-pointer"
+            aria-label="Randomize Visual Style"
+            className="p-3.5 md:p-4 rounded-full bg-white/[0.02] border border-white/5 text-zinc-450 hover:text-white hover:border-white/15 transition-all cursor-pointer"
             title="Morph Random Palette"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-5 h-5 md:w-6 md:h-6" />
           </button>
         </div>
       </div>

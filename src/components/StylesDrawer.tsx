@@ -44,6 +44,7 @@ export const StylesDrawer: React.FC<StylesDrawerProps> = ({
         </div>
         <button
           onClick={onClose}
+          aria-label="Close Styles Drawer"
           className="p-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
         >
           <X className="w-5 h-5" />
