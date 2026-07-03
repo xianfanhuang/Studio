@@ -1,5 +1,5 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://cdn.jsdelivr.net/gh/xianfanhuang/Studio@assets/assets/.aistudio/banner-minimal.png?v=2" />
+<img width="1200" height="475" alt="GHBanner" src="https://cdn.jsdelivr.net/gh/xianfanhuang/Studio@assets/assets/.aistudio/%20banner-minimal.png?v=2" />
 </div>
 
 # Studio Sonoria · Miadio
@@ -16,7 +16,7 @@ Immersive cosmic soundscape player with Nebula visual real-time rendering.
 
 ## Product Preview
 
-(若要显示预览图，请确保使用的图片链接在 assets 分支中存在，或将图片路径指向 raw 或 CDN 地址。当前 README 使用 CDN 引用 assets 分支下的 banner。)
+(若要显示预览图，请确保使用的图片链接在 assets 分支中存在，或将图片路径指向 raw 或 CDN 地址。当前 README 使用 CDN 引用 assets 分支下的 banner。注意：仓库中的图片文件名存在前置空格，因此链接中使用了 %20 编码以匹配当前文件名。建议将文件重命名以移除前导空格以改善可用性。)
 
 ## Core Features
 - 🪐 Nebula 动态粒子背景可视化
@@ -29,8 +29,21 @@ Immersive cosmic soundscape player with Nebula visual real-time rendering.
 - 垂直社交封面与介绍用图（位于 assets/.aistudio）
 
 ## 修复说明
-- 修复了 README 中 banner 图片的链接与 HTML 标签缺失引号的问题，确保图片能正确通过 jsDelivr CDN 从 assets 分支加载。
-- 优化了 README 的结构与排版，统一使用 Markdown 语法并保留居中 banner 显示效果。
+- 发现仓库图片文件名在 assets/.aistudio 下以“ 空格 + banner-minimal.png ”命名，导致原本指向无空格文件名的链接无法找到图片。
+- 为确保图片能显示，已在 README 中将图片链接改为带有 URL 编码的路径（%20）以匹配当前文件名。
+- 推荐并说明如何重命名文件以移除前导空格（见下）。
+
+如何移除文件名前导空格（建议）
+1. 在本地操作：
+   - 克隆 assets 分支并重命名：
+     git clone --branch assets https://github.com/xianfanhuang/Studio.git
+     cd Studio
+     git mv "assets/.aistudio/ banner-minimal.png" "assets/.aistudio/banner-minimal.png"
+     git commit -m "Rename: remove leading space from banner-minimal.png"
+     git push origin assets
+2. 或使用 GitHub 网页界面：
+   - 打开文件页面 https://github.com/xianfanhuang/Studio/blob/assets/assets/.aistudio/%20banner-minimal.png
+   - 点击编辑（铅笔），重新上传或创建新文件名并删除旧文件（网页 UI 对二进制文件编辑有限，建议本地操作或通过 git）。
 
 ## 本地运行（简要）
 1. 克隆仓库：
