@@ -83,10 +83,12 @@ export const ZenCapsule: React.FC<ZenCapsuleProps> = ({
 
       <div className="h-6 w-px bg-white/10 rounded-full" />
 
-      {/* Interactive indicator metadata representation */}
-      <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
-        <Compass className="w-3.5 h-3.5 animate-[spin_10s_linear_infinite]" />
-        <span className="uppercase tracking-widest text-[9px] text-[var(--emotion-color)] font-bold font-mono">
+      {/* Interactive brand representation */}
+      <div className="flex flex-col items-end justify-center pr-1 select-none">
+        <h2 className="font-display text-[12px] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white/95 to-white/40">
+          miadio
+        </h2>
+        <span className="uppercase tracking-[0.25em] text-[7px] text-[var(--emotion-color)] font-medium font-mono opacity-80 mt-[-2px]">
           {activeEmotion}
         </span>
       </div>

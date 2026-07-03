@@ -149,11 +149,11 @@ export const CodeDrawer: React.FC<CodeDrawerProps> = ({
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Terminal className="w-5 h-5 text-[var(--emotion-color)] transition-colors duration-500" />
-          <h2 className="text-lg font-medium text-white tracking-wide">极客引擎 · Terminal</h2>
+          <h2 className="text-lg font-medium text-white tracking-wide">Geek Engine · Terminal</h2>
         </div>
         <button
           onClick={onClose}
-          className="p-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+          className="p-1.5 rounded-full bg-transparent hover:bg-white/10 text-zinc-500 hover:text-white transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>

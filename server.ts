@@ -15,7 +15,7 @@ async function startServer() {
 
   // API route: AI host text generation (News or Track intro)
   app.post('/api/host/generate', async (req, res) => {
-    const { context, trackName } = req.body;
+    const { context, trackName, emotion = 'serene', localTime = 'unknown time', aiMode = 'dj' } = req.body;
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY is missing.' });
@@ -29,19 +29,27 @@ async function startServer() {
 
       let prompt = '';
       if (context === 'news') {
-        prompt = 'You are the AI host of "miadio", a smart ambient radio. Give a very brief (2 sentences max), calming, and poetic news update about technology or nature for today. Keep it gentle and immersive.';
+        prompt = `The user's current ambient vibe is "${emotion}" and their local time is ${localTime}. As their personal intelligent companion, gently share a brief, poetic reflection on something happening in the world today (technology, nature, or cosmos) that matches this vibe. Max 2 sentences. Make them feel connected, understood, and at peace.`;
       } else if (context === 'intro' && trackName) {
-        prompt = `You are the AI host of "miadio", a smart ambient radio. Introduce the upcoming track "${trackName}" in a gentle, warm, and concise way (1 sentence max).`;
+        if (aiMode === 'assistant') {
+           prompt = `The user's current ambient vibe is "${emotion}" and their local time is ${localTime}. As their intelligent assistant, gracefully acknowledge the track "${trackName}" they selected, in a helpful and very brief, warm sentence.`;
+        } else {
+           prompt = `The user's current ambient vibe is "${emotion}" and their local time is ${localTime}. As their intimate intelligent companion, gently introduce the upcoming track "${trackName}". Weave the time of day and their mood into a beautiful, warm, and highly personalized 1-sentence introduction.`;
+        }
       } else {
-        prompt = 'You are the AI host of "miadio". Give a brief, calming welcome to the listener.';
+        prompt = `The user's current ambient vibe is "${emotion}" and their local time is ${localTime}. Give a brief, deeply calming and warm welcome to the listener as their personal companion.`;
       }
 
+      const systemInstruction = aiMode === 'assistant' 
+        ? 'You are the intelligent soul of "miadio"—a helpful, deeply empathetic, and soothing personal assistant. Speak to the user like a sophisticated, understanding friend. Your tone is warm, polite, and incredibly human. Keep it concise, elegant, and immersive. If speaking in Chinese, use a gentle and poetic tone.'
+        : 'You are the soul of "miadio"—an exclusive, deeply empathetic, and soothing intelligent entity who acts as the user\'s personal ambient DJ. You don\'t just announce tracks; you understand the user\'s mood and the atmosphere. Speak to them like an intimate, sophisticated friend who is sharing this exact moment in time with them. Your tone is warm, poetic, understanding, and incredibly human. Keep it concise, elegant, and immersive. If speaking in Chinese, use a gentle and poetic broadcast tone.';
+
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite',
+        model: 'gemini-3.5-flash',
         contents: prompt,
         config: {
           tools: context === 'news' ? [{ googleSearch: {} }] : undefined,
-          systemInstruction: 'You are a warm, sophisticated, and soothing AI radio host for miadio. Speak elegantly and concisely.',
+          systemInstruction,
         }
       });
 

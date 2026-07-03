@@ -40,11 +40,11 @@ export const StylesDrawer: React.FC<StylesDrawerProps> = ({
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Palette className="w-5 h-5 text-[var(--emotion-color)] transition-colors duration-500" />
-          <h2 className="text-lg font-medium text-white tracking-wide">视觉风格 · Styles</h2>
+          <h2 className="text-lg font-medium text-white tracking-wide">Visual Styles</h2>
         </div>
         <button
           onClick={onClose}
-          className="p-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+          className="p-1.5 rounded-full bg-transparent hover:bg-white/10 text-zinc-500 hover:text-white transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -53,7 +53,7 @@ export const StylesDrawer: React.FC<StylesDrawerProps> = ({
       {/* Styles Grid */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <p className="text-xs text-zinc-500 leading-relaxed">
-          Sonoria 风格引擎融合了 Canvas 微粒子与高频滤波器。点击下方预设启动动态画幅切换。
+          miadio procedural visual engine.
         </p>
 
         <div className="grid grid-cols-1 gap-3 pt-2">

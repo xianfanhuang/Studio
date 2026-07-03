@@ -27,11 +27,11 @@ export const PlaylistDrawer: React.FC<PlaylistDrawerProps> = ({
       <div className="p-6 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Music className="w-5 h-5 text-[var(--emotion-color)] transition-colors duration-500" />
-          <h2 className="text-lg font-medium text-white tracking-wide">曲库清单 · Playlist</h2>
+          <h2 className="text-lg font-medium text-white tracking-wide">Library</h2>
         </div>
         <button
           onClick={onClose}
-          className="p-1 px-2 rounded-lg bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
+          className="p-1.5 rounded-full bg-transparent hover:bg-white/10 text-zinc-500 hover:text-white transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -40,14 +40,14 @@ export const PlaylistDrawer: React.FC<PlaylistDrawerProps> = ({
       {/* Track List */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <p className="text-xs text-zinc-500 leading-relaxed font-sans">
-          整合了环境频率合成音、流媒体网络电波及本地拖入曲目。点击卡片开启即刻同频运转。
+          Library of synthetic resonance, streaming waves, and local frequencies.
         </p>
 
         <div className="space-y-2 pt-2">
           {playlist.length === 0 ? (
             <div className="p-8 border border-dashed border-white/5 rounded-2xl text-center">
-              <p className="text-sm text-zinc-500 mb-1">您的播放列表空无一人</p>
-              <p className="text-xs text-zinc-600">点击 “加曲” 拖放本地 MP3 或加载音乐流</p>
+              <p className="text-sm text-zinc-500 mb-1">The library is empty.</p>
+              <p className="text-xs text-zinc-600">Drag and drop MP3s to add tracks.</p>
             </div>
           ) : (
             playlist.map((track, i) => {
