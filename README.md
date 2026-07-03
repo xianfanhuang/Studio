@@ -1,5 +1,5 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/xianfanhuang/Studio/blob/assets/assets/.aistudio/banner-minimal.png" />
+<img width="1200" height="475" alt="GHBanner" src="https://raw.githubusercontent.com/xianfanhuang/Studio/assets/assets/.aistudio/banner-minimal.png" />
 </div>
 
 # Studio Sonoria · Miadio
