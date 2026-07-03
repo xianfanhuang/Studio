@@ -2,6 +2,9 @@ name: Rename banner file and update README
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - assets
 
 jobs:
   rename-banner:
