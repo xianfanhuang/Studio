@@ -1,5 +1,5 @@
 {
-  "name": "miadio",
+  "name": "Midalo",
   "description": "An exclusive smart ambient radio built with a personalized private music library, real-time adaptive brief news, and an AI resident host delivering an uninterrupted gentle immersive listening experience.",
   "requestFramePermissions": [
     "microphone"

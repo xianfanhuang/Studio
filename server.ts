@@ -103,7 +103,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[miadio Server] Listening securely at http://localhost:${PORT}`);
+    console.log(`[Midalo Server] Listening securely at http://localhost:${PORT}`);
   });
 }
 

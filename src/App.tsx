@@ -14,12 +14,12 @@ import {
   PlusCircle,
   Clock,
   Sparkles,
-  Radio, // Added icon for AI host
-  RadioReceiver,
-  Bot,
-  PowerOff,
-  Globe,
-  Cloud,
+  AudioWaveform, // Added icon for AI host
+  
+  Orbit,
+  Circle,
+  Wind,
+  Droplet,
   Captions,
   MoreHorizontal
 } from 'lucide-react';
@@ -874,7 +874,7 @@ export default function App() {
                   className="px-3 py-2 rounded-xl bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer flex items-center gap-2 text-xs font-medium"
                   title="Mood Sync"
                 >
-                  <Cloud className="w-3.5 h-3.5" />
+                  <Droplet className="w-3.5 h-3.5" />
                   <span>Sync Mood</span>
                 </button>
                 <button
@@ -885,7 +885,7 @@ export default function App() {
                   className="px-3 py-2 rounded-xl bg-transparent text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer flex items-center gap-2 text-xs font-medium"
                   title="AI News Update"
                 >
-                  <Globe className="w-3.5 h-3.5" />
+                  <Wind className="w-3.5 h-3.5" />
                   <span>Briefing</span>
                 </button>
                 <button
@@ -918,7 +918,7 @@ export default function App() {
           {/* Core Brand Mark */}
           <div className="z-10 flex flex-col items-center justify-center mt-[-10px] pointer-events-none select-none">
             <h2 className="font-display text-[3.25rem] sm:text-6xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/95 to-white/30 drop-shadow-2xl">
-              miadio
+              Midalo
             </h2>
             <div className="flex items-center gap-2 mt-2">
               <div className="w-1 h-1 rounded-full bg-[var(--emotion-color)]/60 animate-pulse" />
@@ -1007,11 +1007,11 @@ export default function App() {
             title={`AI Mode: ${aiMode.toUpperCase()} (Click to change | Right-click for intro)`}
           >
             {aiMode === 'dj' ? (
-              <Radio className={`w-5 h-5 ${isHostActive ? 'animate-pulse' : ''}`} />
+              <AudioWaveform className={`w-5 h-5 ${isHostActive ? 'animate-pulse' : ''}`} />
             ) : aiMode === 'assistant' ? (
-              <Bot className={`w-5 h-5 ${isHostActive ? 'animate-bounce' : ''}`} />
+              <Orbit className={`w-5 h-5 ${isHostActive ? 'animate-bounce' : ''}`} />
             ) : (
-              <PowerOff className="w-5 h-5" />
+              <Circle className="w-5 h-5" />
             )}
           </button>
 
@@ -1063,7 +1063,7 @@ export default function App() {
       <ZenCapsule
         isVisible={isZen}
         activeTrackName={isMicActive ? 'Ambient Mic' : isHostActive ? 'AI Assistant Speaking' : activeTrack?.name || ''}
-        activeTrackArtist={isMicActive ? 'Ambient Frequencies' : isHostActive ? 'miadio' : activeTrack?.artist || ''}
+        activeTrackArtist={isMicActive ? 'Ambient Frequencies' : isHostActive ? 'Midalo' : activeTrack?.artist || ''}
         currentTime={currentTime}
         duration={duration}
         isPlaying={isPlaying || isHostActive}
