@@ -1,7 +1,7 @@
+
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://cdn.jsdelivr.net/gh/xianfanhuang/Studio@assets/assets/.aistudio/banner-minimal.png?v=2" />
 </div>
-
 # Miadio
 
 > Immersive Ambient Radio · Dynamic Visual Art Space  
