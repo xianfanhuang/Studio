@@ -2,7 +2,7 @@
 <img width="1200" height="475" alt="GHBanner" src="https://cdn.jsdelivr.net/gh/xianfanhuang/Studio@assets/assets/.aistudio/banner-minimal.png?v=2" />
 </div>
 
-#Miadio
+# Miadio
 
 Browser-native ambient & downtempo global radio, built under the Meta-Sensory Intelligence framework.
 Immersive cosmic soundscape player with Nebula visual real-time rendering.
