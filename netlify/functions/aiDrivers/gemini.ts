@@ -56,7 +56,7 @@ export const geminiDriver = async (action: string, payload: any, config: any) =>
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Zephyr' },
+              prebuiltVoiceConfig: { voiceName: 'Aoede' },
             },
           },
         },

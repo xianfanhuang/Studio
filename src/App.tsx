@@ -155,6 +155,7 @@ export default function App() {
   const ttsAudioContextRef = useRef<AudioContext | null>(null);
   const currentTtsSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const musicGainRef = useRef<GainNode | null>(null);
+  const masterCompressorRef = useRef<DynamicsCompressorNode | null>(null);
 
   // Trigger floating text toasts
   const triggerToast = (text: string) => {
@@ -179,9 +180,19 @@ export default function App() {
       analyser.fftSize = 256; // Smaller fftSize for snappy UI graphs
       analyser.smoothingTimeConstant = 0.75;
 
+      
+      const masterCompressor = ctx.createDynamicsCompressor();
+      masterCompressor.threshold.value = -28;
+      masterCompressor.knee.value = 15;
+      masterCompressor.ratio.value = 12;
+      masterCompressor.attack.value = 0.01;
+      masterCompressor.release.value = 0.25;
+      masterCompressorRef.current = masterCompressor;
+      
       const musicGain = ctx.createGain();
       musicGain.gain.value = 1.0;
       musicGainRef.current = musicGain;
+
 
       audioContextRef.current = ctx;
       analyserRef.current = analyser;
@@ -215,7 +226,8 @@ export default function App() {
       try {
         const source = ctx.createMediaElementSource(el);
         source.connect(musicGain);
-        musicGain.connect(analyser);
+        musicGain.connect(masterCompressor);
+        masterCompressor.connect(analyser);
         analyser.connect(ctx.destination);
         mediaSourceRef.current = source;
       } catch (e) {
@@ -269,6 +281,7 @@ export default function App() {
                 if (isPlaying && activeTrack?.isSynthesized && audioContextRef.current) {
                    (audioContextRef.current as any).emotion = moodData.emotion;
                    ambientSynth.stop();
+    if (audioElementRef.current) audioElementRef.current.pause();
                    ambientSynth.start(audioContextRef.current, musicGainRef.current || analyserRef.current!, moodData.emotion);
                 }
              }
@@ -321,7 +334,7 @@ export default function App() {
     if (musicGainRef.current && audioContextRef.current) {
        musicGainRef.current.gain.cancelScheduledValues(audioContextRef.current.currentTime);
        musicGainRef.current.gain.setValueAtTime(musicGainRef.current.gain.value, audioContextRef.current.currentTime);
-       musicGainRef.current.gain.linearRampToValueAtTime(0.15, audioContextRef.current.currentTime + 1.5);
+       musicGainRef.current.gain.linearRampToValueAtTime(0.4, audioContextRef.current.currentTime + 0.5);
     }
 
     setIsHostActive(true);
@@ -375,10 +388,24 @@ export default function App() {
         source.buffer = audioBuffer;
         
         // Connect to our main analyser if we want it to react to the voice!
-        source.connect(analyser);
+        const voiceGain = audioCtx.createGain();
+        voiceGain.gain.value = 2.5;
+        source.connect(voiceGain);
+        if (masterCompressorRef.current) {
+            voiceGain.connect(masterCompressorRef.current);
+        } else {
+            voiceGain.connect(analyser);
+        }
 
         currentTtsSourceRef.current = source;
+        
+        if (musicGainRef.current && audioCtx) {
+           musicGainRef.current.gain.cancelScheduledValues(audioCtx.currentTime);
+           musicGainRef.current.gain.setValueAtTime(musicGainRef.current.gain.value, audioCtx.currentTime);
+           musicGainRef.current.gain.linearRampToValueAtTime(0.35, audioCtx.currentTime + 0.5);
+        }
         source.start();
+
         
         const restoreVolume = () => {
            setIsHostActive(false);
@@ -403,7 +430,14 @@ export default function App() {
          }
       };
 
+      
+      if (musicGainRef.current && audioContextRef.current) {
+         musicGainRef.current.gain.cancelScheduledValues(audioContextRef.current.currentTime);
+         musicGainRef.current.gain.setValueAtTime(musicGainRef.current.gain.value, audioContextRef.current.currentTime);
+         musicGainRef.current.gain.linearRampToValueAtTime(0.35, audioContextRef.current.currentTime + 0.5);
+      }
       if ('speechSynthesis' in window) {
+
         const utterance = new SpeechSynthesisUtterance(spokenText);
         utterance.rate = 0.95;
         utterance.pitch = 0.95;
@@ -573,6 +607,7 @@ export default function App() {
       // Pause
       setIsPlaying(false);
       ambientSynth.stop();
+    if (audioElementRef.current) audioElementRef.current.pause();
       audioElementRef.current?.pause();
     } else {
       // Play
@@ -620,6 +655,7 @@ export default function App() {
       // Shut down music player first
       setIsPlaying(false);
       ambientSynth.stop();
+    if (audioElementRef.current) audioElementRef.current.pause();
       audioElementRef.current?.pause();
 
       navigator.mediaDevices
@@ -657,6 +693,7 @@ export default function App() {
     if (nextIdx >= playlist.length) nextIdx = 0;
 
     ambientSynth.stop();
+    if (audioElementRef.current) audioElementRef.current.pause();
     setIsPlaying(false);
     
     const nextTrack = playlist[nextIdx];
@@ -698,6 +735,7 @@ export default function App() {
     setTrackIdx(playlist.length); // Play newly loaded song right away!
     setIsPlaying(false);
     ambientSynth.stop();
+    if (audioElementRef.current) audioElementRef.current.pause();
 
     setTimeout(() => {
       handleTogglePlay();
@@ -715,6 +753,21 @@ export default function App() {
     audioElementRef.current.currentTime = duration * pct;
     setCurrentTime(duration * pct);
   };
+
+
+  // Synthesized track time tick
+  useEffect(() => {
+    let interval;
+    if (isPlaying && playlist[trackIdx]?.isSynthesized) {
+      interval = setInterval(() => {
+        setCurrentTime(prev => {
+          if (prev >= 120) return 0;
+          return prev + 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, trackIdx, playlist]);
 
   // Keyboard Shortcuts Binding
   useEffect(() => {
@@ -955,7 +1008,7 @@ export default function App() {
             >
               <div
                 className="absolute left-0 top-0 h-full bg-[var(--emotion-color)] rounded-full transition-all duration-100 relative"
-                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                style={{ width: `${duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0}%` }}
               >
                 {/* Scrub knob */}
                 <div className="absolute right-0 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-white opacity-0 group-hover:opacity-100 transition-opacity ring-2 ring-[var(--emotion-color)]" />
@@ -1088,6 +1141,7 @@ export default function App() {
           setTrackIdx(i);
           setIsPlaying(false);
           ambientSynth.stop();
+    if (audioElementRef.current) audioElementRef.current.pause();
           setTimeout(() => {
             handleTogglePlay();
           }, 100);
