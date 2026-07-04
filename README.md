@@ -10,7 +10,7 @@ Immersive cosmic soundscape player with Nebula visual real-time rendering.
 ---
 
 ## Quick Links
-- Live Demo: [https://studio-sonoria.netlify.app](https://studio-sonoria.netlify.app)
+- Live Demo: [https://midaio.netlify.app](https://studio-sonoria.netlify.app)
 - GitHub Repository: [https://github.com/xianfanhuang/Studio](https://github.com/xianfanhuang/Studio)
 - Assets (assets branch): [assets/.aistudio](https://github.com/xianfanhuang/Studio/tree/assets/assets/.aistudio)
 
