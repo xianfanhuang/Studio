@@ -862,7 +862,7 @@ export default function App() {
 
       {/* 2. Glass Player Center Panel */}
       <div
-        className={`relative z-10 w-full max-w-[19rem] sm:max-w-[360px] p-6 sm:p-8 rounded-[32px] border border-white/[0.06] bg-[#080808]/70 backdrop-blur-[48px] shadow-[0_16px_48px_rgba(0,0,0,0.2)] transition-all duration-700  ${
+        className={`relative z-10 w-full max-w-[19rem] sm:max-w-[360px] p-6 sm:p-8 rounded-[32px] glass-panel transition-all duration-700  ${
           isZen
             ? 'opacity-0 scale-[0.93] pointer-events-none translate-y-6 blur-lg'
             : 'opacity-100 scale-100 pointer-events-auto'
@@ -881,35 +881,29 @@ export default function App() {
           <div className="flex gap-1.5 items-center relative">
             <button
               onClick={() => setActiveDrawer(activeDrawer === 'style' ? null : 'style')}
-              className={`p-2 rounded-full transition-all active:scale-95 cursor-pointer ${
-                activeDrawer === 'style'
-                  ? 'bg-[var(--emotion-color)]/10 text-[var(--emotion-color)]'
-                  : 'bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04]'
+              className={`w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost ${
+                activeDrawer === 'style' ? 'bg-[var(--color-glass-active)] text-white' : ''
               }`}
               title="Visual Styles"
             >
-              <Palette className="w-4 h-4" />
+              <Palette className="w-4.5 h-4.5" />
             </button>
             <button
               onClick={() => setActiveDrawer(activeDrawer === 'playlist' ? null : 'playlist')}
-              className={`p-2 rounded-full transition-all active:scale-95 cursor-pointer ${
-                activeDrawer === 'playlist'
-                  ? 'bg-[var(--emotion-color)]/10 text-[var(--emotion-color)]'
-                  : 'bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04]'
+              className={`w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost ${
+                activeDrawer === 'playlist' ? 'bg-[var(--color-glass-active)] text-white' : ''
               }`}
               title="Private Library"
             >
-              <Music className="w-4 h-4" />
+              <Music className="w-4.5 h-4.5" />
             </button>
             
-            <div className="w-px h-3 bg-white/10 mx-0.5" />
+            <div className="w-px h-4 bg-[var(--color-glass-border)] mx-1" />
             
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className={`p-2 rounded-full transition-all active:scale-95 cursor-pointer ${
-                showMoreMenu || isCcActive
-                  ? 'text-white bg-white/[0.04]'
-                  : 'bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04]'
+              className={`w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost ${
+                showMoreMenu || isCcActive ? 'bg-[var(--color-glass-active)] text-white' : ''
               }`}
               title="More Options"
             >
@@ -1001,7 +995,7 @@ export default function App() {
             <div
               ref={progressScrubRef}
               onClick={(e) => handleScrub(e.clientX)}
-              className="relative w-full h-1.5 bg-white/5 hover:h-2 rounded-full cursor-pointer transition-all duration-300 group"
+              className="relative w-full h-1.5 bg-[var(--color-glass-border)] hover:bg-[var(--color-glass-hover)] hover:h-2 rounded-full cursor-pointer transition-all duration-fluid group"
             >
               <div
                 className="absolute left-0 top-0 h-full bg-[var(--emotion-color)] rounded-full transition-all duration-100 relative"
@@ -1047,19 +1041,19 @@ export default function App() {
                 handleAIHost('intro', e as any);
               }
             }}
-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-95 outline-none cursor-pointer duration-300 ${
+            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-95 outline-none cursor-pointer duration-fluid ease-fluid ${
               isHostActive
-                ? 'bg-[var(--emotion-color)]/20 text-white shadow-md shadow-[var(--emotion-color)]/20 animate-pulse'
+                ? 'bg-[var(--emotion-color)]/20 text-white shadow-[0_0_16px_var(--emotion-glow)] animate-[pulseBreathe_3s_infinite]'
                 : aiMode !== 'off'
-                  ? 'bg-white/[0.04] text-[var(--emotion-color)] hover:bg-[var(--emotion-color)]/10'
-                  : 'bg-transparent text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'
+                  ? 'bg-[var(--color-glass-base)] text-[var(--emotion-color)] hover:bg-[var(--color-glass-hover)]'
+                  : 'btn-icon-ghost'
             }`}
             title={`AI Mode: ${aiMode.toUpperCase()} (Click to change | Right-click for intro)`}
           >
             {aiMode === 'dj' ? (
               <AudioWaveform className={`w-4.5 h-4.5 ${isHostActive ? 'animate-pulse' : ''}`} />
             ) : aiMode === 'assistant' ? (
-              <Orbit className={`w-4.5 h-4.5 ${isHostActive ? 'animate-bounce' : ''}`} />
+              <Orbit className={`w-4.5 h-4.5 ${isHostActive ? 'animate-[pulseBreathe_3s_infinite]' : ''}`} />
             ) : (
               <Circle className="w-4.5 h-4.5" />
             )}
@@ -1068,7 +1062,7 @@ export default function App() {
           <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => handleSkip(-1)}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.01] hover:bg-white/[0.04] active:scale-95 text-zinc-400 hover:text-white transition-all cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost"
               title="Prev Track"
             >
               <SkipBack className="w-4 h-4 fill-zinc-450" />
@@ -1076,7 +1070,7 @@ export default function App() {
 
             <button
               onClick={() => handleTogglePlay()}
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer shadow-[0_8px_24px_var(--emotion-glow)]"
               title="Play / Pause [Space]"
             >
               {isPlaying ? (
@@ -1088,7 +1082,7 @@ export default function App() {
 
             <button
               onClick={() => handleSkip(1)}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.01] hover:bg-white/[0.04] active:scale-95 text-zinc-400 hover:text-white transition-all cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost"
               title="Next Track"
             >
               <SkipForward className="w-4 h-4 fill-zinc-450" />
@@ -1101,7 +1095,7 @@ export default function App() {
               const pick = styles[Math.floor(Math.random() * styles.length)];
               handleSelectStyle(pick.id);
             }}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost"
             title="Morph Random Palette"
           >
             <Sparkles className="w-4.5 h-4.5" />

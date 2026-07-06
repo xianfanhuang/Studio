@@ -1,0 +1,67 @@
+--- src/App.tsx
++++ src/App.tsx
+@@ -1045,15 +1045,15 @@
+               }
+             }}
+-            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-95 outline-none cursor-pointer duration-300 ${
++            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-95 outline-none cursor-pointer duration-fluid ease-fluid ${
+               isHostActive
+-                ? 'bg-[var(--emotion-color)]/20 text-white shadow-md shadow-[var(--emotion-color)]/20 animate-pulse'
++                ? 'bg-[var(--emotion-color)]/20 text-white shadow-[0_0_16px_var(--emotion-glow)] animate-[pulseBreathe_3s_infinite]'
+                 : aiMode !== 'off'
+-                  ? 'bg-white/[0.04] text-[var(--emotion-color)] hover:bg-[var(--emotion-color)]/10'
+-                  : 'bg-transparent text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]'
++                  ? 'bg-[var(--color-glass-base)] text-[var(--emotion-color)] hover:bg-[var(--color-glass-hover)]'
++                  : 'btn-icon-ghost'
+             }`}
+             title={`AI Mode: ${aiMode.toUpperCase()} (Click to change | Right-click for intro)`}
+           >
+             {aiMode === 'dj' ? (
+               <AudioWaveform className={`w-4.5 h-4.5 ${isHostActive ? 'animate-pulse' : ''}`} />
+             ) : aiMode === 'assistant' ? (
+-              <Orbit className={`w-4.5 h-4.5 ${isHostActive ? 'animate-bounce' : ''}`} />
++              <Orbit className={`w-4.5 h-4.5 ${isHostActive ? 'animate-[pulseBreathe_3s_infinite]' : ''}`} />
+             ) : (
+               <Circle className="w-4.5 h-4.5" />
+             )}
+           </button>
+ 
+-          <div className="flex items-center gap-2 sm:gap-3">
++          <div className="flex items-center gap-3 sm:gap-4">
+             <button
+               onClick={() => handleSkip(-1)}
+-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.01] hover:bg-white/[0.04] active:scale-95 text-zinc-400 hover:text-white transition-all cursor-pointer"
++              className="w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost"
+               title="Prev Track"
+             >
+-              <SkipBack className="w-4 h-4 fill-zinc-450" />
++              <SkipBack className="w-4.5 h-4.5 fill-current" />
+             </button>
+ 
+             <button
+               onClick={() => handleTogglePlay()}
+-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
++              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-90 select-none active:scale-95 transition-all duration-fluid ease-fluid shadow-[0_8px_24px_var(--emotion-glow)]"
+               title="Play / Pause [Space]"
+             >
+@@ -1077,7 +1077,7 @@
+             <button
+               onClick={() => handleSkip(1)}
+-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.01] hover:bg-white/[0.04] active:scale-95 text-zinc-400 hover:text-white transition-all cursor-pointer"
++              className="w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost"
+               title="Next Track"
+             >
+-              <SkipForward className="w-4 h-4 fill-zinc-450" />
++              <SkipForward className="w-4.5 h-4.5 fill-current" />
+             </button>
+           </div>
+ 
+           <button
+@@ -1087,7 +1087,7 @@
+               handleSelectStyle(pick.id);
+             }}
+-            className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
++            className="w-10 h-10 flex items-center justify-center rounded-full btn-icon-ghost"
+             title="Morph Random Palette"
+           >
+             <Sparkles className="w-4.5 h-4.5" />
