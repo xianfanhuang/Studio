@@ -862,7 +862,7 @@ export default function App() {
 
       {/* 2. Glass Player Center Panel */}
       <div
-        className={`relative z-10 w-full max-w-[22rem] sm:max-w-md p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] border border-white/[0.08] bg-[#050505]/80 sm:bg-[#0a0a0a]/85 backdrop-blur-[48px] shadow-2xl transition-all duration-700  ${
+        className={`relative z-10 w-full max-w-[19rem] sm:max-w-[380px] p-5 sm:p-6 rounded-[28px] sm:rounded-[32px] border border-white/[0.06] bg-black/40 sm:bg-[#0a0a0a]/60 backdrop-blur-[32px] shadow-2xl transition-all duration-700  ${
           isZen
             ? 'opacity-0 scale-[0.93] pointer-events-none translate-y-6 blur-lg'
             : 'opacity-100 scale-100 pointer-events-auto'
@@ -870,7 +870,7 @@ export default function App() {
         onClick={(e) => e.stopPropagation()} // don't close Zen mode when hitting player!
       >
         {/* Top toolbar */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 px-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--emotion-color)] transition-colors duration-500 animate-pulse" />
             <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
@@ -959,18 +959,15 @@ export default function App() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Dynamic Album & Visual Brand Center */}
-        <div className="relative w-full aspect-square sm:aspect-[4/4.5] rounded-[24px] sm:rounded-[28px] border border-white/[0.04] bg-gradient-to-b from-black/20 to-black/80 overflow-hidden mb-6 sm:mb-8 group shadow-[0_0_40px_rgba(0,0,0,0.5)_inset] flex flex-col items-center justify-center">
+        </div>        {/* Dynamic Album & Visual Brand Center */}
+        <div className="relative w-full aspect-square sm:aspect-[4/4.5] rounded-[20px] sm:rounded-[24px] border border-white/[0.05] bg-gradient-to-b from-black/60 to-black/90 overflow-hidden mb-5 sm:mb-6 group shadow-[0_0_40px_rgba(0,0,0,0.5)_inset] flex flex-col items-center justify-center">
           <canvas
             ref={albumCanvasRef}
             className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-80"
           />
-
           {/* Core Brand Mark */}
           <div className="z-10 flex flex-col items-center justify-center mt-[-10px] pointer-events-none select-none">
-            <h2 className="font-display text-[3.25rem] sm:text-6xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/95 to-white/30 drop-shadow-2xl">
+            <h2 className="font-display text-5xl sm:text-[3.5rem] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/95 to-white/30 drop-shadow-2xl">
               Miadio
             </h2>
             <div className="flex items-center gap-2 mt-2">
@@ -979,11 +976,11 @@ export default function App() {
             </div>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5 flex flex-col justify-end p-5">
-            <h1 className="font-display text-xl font-medium text-white/90 leading-tight tracking-wide mb-1 transition-colors duration-500">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent flex flex-col justify-end p-4">
+            <h1 className="font-display text-lg font-medium text-white/90 leading-tight tracking-wide mb-0.5 transition-colors duration-500">
               {isMicActive ? 'Ambient Mic' : isHostActive ? 'AI Assistant Speaking' : activeTrack?.name || 'Silent Wave'}
             </h1>
-            <p className="text-[11px] font-mono text-white/40 uppercase tracking-widest leading-tight transition-colors duration-500">
+            <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-tight transition-colors duration-500">
               {isMicActive ? 'Listening to microphone' : isHostActive ? 'Generative Broadcast' : activeTrack?.artist || 'Acoustic Engine'}
             </p>
           </div>
@@ -1027,7 +1024,7 @@ export default function App() {
 
         {/* AI Host Progress Placeholder */}
         {isHostActive && (
-          <div className="space-y-2 mb-6 h-6 flex items-center">
+          <div className="space-y-2 mb-5 h-6 flex items-center">
              <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden relative">
                 <div className="absolute top-0 left-0 h-full bg-[var(--emotion-color)] w-full animate-[pulse_1s_infinite]" />
              </div>
@@ -1071,30 +1068,30 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => handleSkip(-1)}
-              className="p-3.5 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="p-3 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
               title="Prev Track"
             >
-              <SkipBack className="w-5 h-5 fill-zinc-450" />
+              <SkipBack className="w-4 h-4 fill-zinc-450" />
             </button>
 
             <button
               onClick={() => handleTogglePlay()}
-              className="w-14 h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 shadow-lg shadow-[var(--emotion-glow)] select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+              className="w-12 h-12 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 shadow-lg shadow-[var(--emotion-glow)] select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
               title="Play / Pause [Space]"
             >
               {isPlaying ? (
-                <Pause className="w-6 h-6 fill-black stroke-black" />
+                <Pause className="w-5 h-5 fill-black stroke-black" />
               ) : (
-                <Play className="w-6 h-6 fill-black ml-1 stroke-black" />
+                <Play className="w-5 h-5 fill-black ml-1 stroke-black" />
               )}
             </button>
 
             <button
               onClick={() => handleSkip(1)}
-              className="p-3.5 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="p-3 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
               title="Next Track"
             >
-              <SkipForward className="w-5 h-5 fill-zinc-450" />
+              <SkipForward className="w-4 h-4 fill-zinc-450" />
             </button>
           </div>
 
