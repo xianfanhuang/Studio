@@ -53,7 +53,7 @@ export const StylesDrawer: React.FC<StylesDrawerProps> = ({
       {/* Styles Grid */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <p className="text-xs text-zinc-500 leading-relaxed">
-          Midalo procedural visual engine.
+          Miadio procedural visual engine.
         </p>
 
         <div className="grid grid-cols-1 gap-3 pt-2">

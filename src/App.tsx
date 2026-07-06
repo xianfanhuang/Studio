@@ -862,7 +862,7 @@ export default function App() {
 
       {/* 2. Glass Player Center Panel */}
       <div
-        className={`relative z-10 w-full max-w-[22rem] sm:max-w-md p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] border border-white/[0.06] bg-black/40 sm:bg-[#0a0a0a]/60 backdrop-blur-[32px] shadow-2xl transition-all duration-700  ${
+        className={`relative z-10 w-full max-w-[22rem] sm:max-w-md p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] border border-white/[0.08] bg-[#050505]/80 sm:bg-[#0a0a0a]/85 backdrop-blur-[48px] shadow-2xl transition-all duration-700  ${
           isZen
             ? 'opacity-0 scale-[0.93] pointer-events-none translate-y-6 blur-lg'
             : 'opacity-100 scale-100 pointer-events-auto'
@@ -962,7 +962,7 @@ export default function App() {
         </div>
 
         {/* Dynamic Album & Visual Brand Center */}
-        <div className="relative w-full aspect-square sm:aspect-[4/4.5] rounded-[24px] sm:rounded-[28px] border border-white/[0.05] bg-gradient-to-b from-black/60 to-black/90 overflow-hidden mb-6 sm:mb-8 group shadow-[0_0_40px_rgba(0,0,0,0.5)_inset] flex flex-col items-center justify-center">
+        <div className="relative w-full aspect-square sm:aspect-[4/4.5] rounded-[24px] sm:rounded-[28px] border border-white/[0.04] bg-gradient-to-b from-black/20 to-black/80 overflow-hidden mb-6 sm:mb-8 group shadow-[0_0_40px_rgba(0,0,0,0.5)_inset] flex flex-col items-center justify-center">
           <canvas
             ref={albumCanvasRef}
             className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-80"
@@ -971,7 +971,7 @@ export default function App() {
           {/* Core Brand Mark */}
           <div className="z-10 flex flex-col items-center justify-center mt-[-10px] pointer-events-none select-none">
             <h2 className="font-display text-[3.25rem] sm:text-6xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/95 to-white/30 drop-shadow-2xl">
-              Midalo
+              Miadio
             </h2>
             <div className="flex items-center gap-2 mt-2">
               <div className="w-1 h-1 rounded-full bg-[var(--emotion-color)]/60 animate-pulse" />
@@ -979,7 +979,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent flex flex-col justify-end p-5">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/5 flex flex-col justify-end p-5">
             <h1 className="font-display text-xl font-medium text-white/90 leading-tight tracking-wide mb-1 transition-colors duration-500">
               {isMicActive ? 'Ambient Mic' : isHostActive ? 'AI Assistant Speaking' : activeTrack?.name || 'Silent Wave'}
             </h1>
@@ -1116,7 +1116,7 @@ export default function App() {
       <ZenCapsule
         isVisible={isZen}
         activeTrackName={isMicActive ? 'Ambient Mic' : isHostActive ? 'AI Assistant Speaking' : activeTrack?.name || ''}
-        activeTrackArtist={isMicActive ? 'Ambient Frequencies' : isHostActive ? 'Midalo' : activeTrack?.artist || ''}
+        activeTrackArtist={isMicActive ? 'Ambient Frequencies' : isHostActive ? 'Miadio' : activeTrack?.artist || ''}
         currentTime={currentTime}
         duration={duration}
         isPlaying={isPlaying || isHostActive}

@@ -6,7 +6,7 @@ export const geminiDriver = async (action: string, payload: any, config: any) =>
 
   const ai = new GoogleGenAI({
     apiKey,
-    httpOptions: { headers: { 'User-Agent': 'Midalo-ai-core' } }
+    httpOptions: { headers: { 'User-Agent': 'Miadio-ai-core' } }
   });
 
   if (action === 'host_generate') {
@@ -25,8 +25,8 @@ export const geminiDriver = async (action: string, payload: any, config: any) =>
     }
 
     const systemInstruction = aiMode === 'assistant'
-       ? `You are the intelligent soul of "Midalo"—a helpful, deeply empathetic, and soothing personal assistant. Speak to the user like a sophisticated, understanding friend. Your tone is '克制应景的诗意' (restrained and situational poetry). Be minimalistic, elegant, and evocative without being verbose. Keep it extremely concise. If speaking in Chinese, ensure the phrasing feels like high-end art—restrained, natural, and beautifully poetic.`
-      : `You are the soul of "Midalo"—an exclusive, deeply empathetic, and soothing intelligent entity who acts as the user's personal ambient DJ. You don't just announce tracks; you understand the user's mood and the atmosphere. Speak to them like an intimate, sophisticated friend who is sharing this exact moment in time with them. Your tone is '克制应景的诗意' (restrained and situational poetry). Be minimalistic, elegant, and evocative without being verbose. Keep it extremely concise. If speaking in Chinese, ensure the phrasing feels like high-end art—restrained, natural, and beautifully poetic.`;
+       ? `You are the intelligent soul of "Miadio"—a helpful, deeply empathetic, and soothing personal assistant. Speak to the user like a sophisticated, understanding friend. Your tone is '克制应景的诗意' (restrained and situational poetry). Be minimalistic, elegant, and evocative without being verbose. Keep it extremely concise. If speaking in Chinese, ensure the phrasing feels like high-end art—restrained, natural, and beautifully poetic.`
+      : `You are the soul of "Miadio"—an exclusive, deeply empathetic, and soothing intelligent entity who acts as the user's personal ambient DJ. You don't just announce tracks; you understand the user's mood and the atmosphere. Speak to them like an intimate, sophisticated friend who is sharing this exact moment in time with them. Your tone is '克制应景的诗意' (restrained and situational poetry). Be minimalistic, elegant, and evocative without being verbose. Keep it extremely concise. If speaking in Chinese, ensure the phrasing feels like high-end art—restrained, natural, and beautifully poetic.`;
 
     try {
       const response = await ai.models.generateContent({
@@ -39,7 +39,7 @@ export const geminiDriver = async (action: string, payload: any, config: any) =>
       });
       return { text: response.text };
     } catch (error: any) {
-      let fallback = 'Welcome back to Midalo. Relax and enjoy the ambient frequencies.';
+      let fallback = 'Welcome back to Miadio. Relax and enjoy the ambient frequencies.';
       if (context === 'news') fallback = 'Today brings new discoveries in nature and technology. Stay curious.';
       if (context === 'intro' && trackName) fallback = `Up next is a beautiful track, ${trackName}. Let it wash over you.`;
       return { text: fallback, error: error.message };

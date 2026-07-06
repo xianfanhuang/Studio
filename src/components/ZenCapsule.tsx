@@ -86,7 +86,7 @@ export const ZenCapsule: React.FC<ZenCapsuleProps> = ({
       {/* Interactive brand representation */}
       <div className="flex flex-col items-end justify-center pr-1 select-none">
         <h2 className="font-display text-[12px] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white/95 to-white/40">
-          Midalo
+          Miadio
         </h2>
         <span className="uppercase tracking-[0.25em] text-[7px] text-[var(--emotion-color)] font-medium font-mono opacity-80 mt-[-2px]">
           {activeEmotion}

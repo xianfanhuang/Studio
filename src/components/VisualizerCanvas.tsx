@@ -429,7 +429,7 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
             const py = Math.sin(angle) * rOffset;
 
             const petHue = (hue + pIdx * 15 + time * 12) % 360;
-            const grad = ctx.createRadialGradient(0, 0, 10, px, py, rOffset);
+            const grad = ctx.createRadialGradient(0, 0, 10, px, py, Math.max(0.1, rOffset));
             grad.addColorStop(0, `hsla(${petHue}, 90%, 65%, 0.35)`);
             grad.addColorStop(0.5, `hsla(${(petHue + 30) % 360}, 75%, 52%, 0.1)`);
             grad.addColorStop(1, 'transparent');
@@ -452,60 +452,56 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
           break;
         }
 
-        case 'spectrum': {
+                case 'spectrum': {
           ctx.fillStyle = 'rgba(5, 5, 8, 0.15)';
           ctx.fillRect(0, 0, W, H);
 
-          // Giant glowing backdrop
-          const bgGrd = ctx.createRadialGradient(W / 2, H, 0, W / 2, H * 0.4, H * 0.85);
+          const cx = W / 2;
+          const cy = H / 2;
+          const maxR = Math.min(W, H) * 0.45;
+
+          const bgGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, maxR * 1.5));
           bgGrd.addColorStop(0, `hsla(${hue}, 70%, 15%, 0.4)`);
           bgGrd.addColorStop(1, 'transparent');
           ctx.fillStyle = bgGrd;
           ctx.fillRect(0, 0, W, H);
 
-          const barCount = Math.min(64, Math.floor(W / 12));
-          const colW = W / barCount;
-          const barW = colW * 0.65;
-          const gap = colW * 0.35;
-          const step = Math.floor(dataArray.length / barCount);
+          const barCount = 64;
+          const step = Math.max(1, Math.floor(dataArray.length / barCount));
+          const baseR = maxR * 0.4 + low * maxR * 0.1;
 
           for (let i = 0; i < barCount; i++) {
             let val = 0;
             for (let j = 0; j < step; j++) {
-              val += dataArray[i * step + j] / 255;
+              if (i * step + j < dataArray.length) {
+                val += dataArray[i * step + j] / 255;
+              }
             }
             val /= step;
+            if (isNaN(val)) val = 0;
 
-            const barH = val * H * 0.6 + 6;
-            const x = i * colW + gap / 2;
-            const barHue = (hue + (i / barCount) * 80) % 360;
-            const alpha = 0.55 + val * 0.45;
+            const angle = (i / barCount) * Math.PI * 2 - Math.PI / 2;
+            const barH = val * maxR * 0.5 + 4;
+            const barHue = (hue + (i / barCount) * 80 + time * 20) % 360;
+            const alpha = 0.45 + val * 0.55;
 
-            // Neon glowing columns
-            const grad = ctx.createLinearGradient(0, H, 0, H - barH);
+            const x0 = cx + Math.cos(angle) * baseR;
+            const y0 = cy + Math.sin(angle) * baseR;
+            const x1 = cx + Math.cos(angle) * (baseR + barH);
+            const y1 = cy + Math.sin(angle) * (baseR + barH);
+
+            ctx.beginPath();
+            ctx.moveTo(x0, y0);
+            ctx.lineTo(x1, y1);
+            
+            const grad = ctx.createLinearGradient(x0, y0, x1, y1);
             grad.addColorStop(0, `hsla(${barHue}, 92%, 55%, ${alpha})`);
-            grad.addColorStop(1, `hsla(${(barHue + 40) % 360}, 92%, 75%, ${alpha * 0.4})`);
-
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            if (ctx.roundRect) {
-              ctx.roundRect(x, H - barH, barW, barH, 4);
-            } else {
-              ctx.rect(x, H - barH, barW, barH);
-            }
-            ctx.fill();
-
-            // Symmetrical drop refraction reflection on water level
-            ctx.globalAlpha = 0.12;
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            if (ctx.roundRect) {
-              ctx.roundRect(x, H, barW, barH * 0.28, 4);
-            } else {
-              ctx.rect(x, H, barW, barH * 0.28);
-            }
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
+            grad.addColorStop(1, `hsla(${(barHue + 40) % 360}, 92%, 75%, ${alpha * 0.1})`);
+            
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = Math.max(2, (W * Math.PI * 2 * baseR) / (barCount * W) * 0.6);
+            ctx.lineCap = 'round';
+            ctx.stroke();
           }
           break;
         }
@@ -520,7 +516,7 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
 
           // Beat flashes expanding radial ripples
           if (beatFlashRef.current > 0) {
-            const radGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * (1.1 + beatFlashRef.current));
+            const radGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, Math.max(1, maxR * (1.1 + beatFlashRef.current))));
             radGrd.addColorStop(0, `hsla(${hue}, 92%, 70%, ${beatFlashRef.current * 0.25})`);
             radGrd.addColorStop(1, 'transparent');
             ctx.fillStyle = radGrd;
@@ -545,12 +541,12 @@ export const VisualizerCanvas = forwardRef<VisualizerHandle, VisualizerCanvasPro
           }
 
           // Central core sphere
-          const coreGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.32);
+          const coreGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, Math.max(1, maxR * 0.32)));
           coreGrd.addColorStop(0, `hsla(${hue}, 90%, 70%, ${0.2 + energy * 0.4})`);
           coreGrd.addColorStop(1, 'transparent');
           ctx.fillStyle = coreGrd;
           ctx.beginPath();
-          ctx.arc(cx, cy, maxR * 0.32, 0, Math.PI * 2);
+          ctx.arc(cx, cy, Math.max(1, Math.max(1, maxR * 0.32)), 0, Math.PI * 2);
           ctx.fill();
           break;
         }
