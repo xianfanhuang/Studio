@@ -862,7 +862,7 @@ export default function App() {
 
       {/* 2. Glass Player Center Panel */}
       <div
-        className={`relative z-10 w-full max-w-[19rem] sm:max-w-[380px] p-5 sm:p-6 rounded-[28px] sm:rounded-[32px] border border-white/[0.06] bg-black/40 sm:bg-[#0a0a0a]/60 backdrop-blur-[32px] shadow-2xl transition-all duration-700  ${
+        className={`relative z-10 w-full max-w-[19rem] sm:max-w-[360px] p-6 sm:p-8 rounded-[32px] border border-white/[0.06] bg-[#080808]/70 backdrop-blur-[48px] shadow-[0_16px_48px_rgba(0,0,0,0.2)] transition-all duration-700  ${
           isZen
             ? 'opacity-0 scale-[0.93] pointer-events-none translate-y-6 blur-lg'
             : 'opacity-100 scale-100 pointer-events-auto'
@@ -870,8 +870,8 @@ export default function App() {
         onClick={(e) => e.stopPropagation()} // don't close Zen mode when hitting player!
       >
         {/* Top toolbar */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2 px-1">
+        <div className="flex items-center justify-between mb-5 px-1">
+          <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--emotion-color)] transition-colors duration-500 animate-pulse" />
             <span className="font-mono text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
               {activeEmotion}
@@ -881,7 +881,7 @@ export default function App() {
           <div className="flex gap-1.5 items-center relative">
             <button
               onClick={() => setActiveDrawer(activeDrawer === 'style' ? null : 'style')}
-              className={`p-2 rounded-full transition-all cursor-pointer ${
+              className={`p-2 rounded-full transition-all active:scale-95 cursor-pointer ${
                 activeDrawer === 'style'
                   ? 'bg-[var(--emotion-color)]/10 text-[var(--emotion-color)]'
                   : 'bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04]'
@@ -892,7 +892,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setActiveDrawer(activeDrawer === 'playlist' ? null : 'playlist')}
-              className={`p-2 rounded-full transition-all cursor-pointer ${
+              className={`p-2 rounded-full transition-all active:scale-95 cursor-pointer ${
                 activeDrawer === 'playlist'
                   ? 'bg-[var(--emotion-color)]/10 text-[var(--emotion-color)]'
                   : 'bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04]'
@@ -906,7 +906,7 @@ export default function App() {
             
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className={`p-2 rounded-full transition-all cursor-pointer ${
+              className={`p-2 rounded-full transition-all active:scale-95 cursor-pointer ${
                 showMoreMenu || isCcActive
                   ? 'text-white bg-white/[0.04]'
                   : 'bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04]'
@@ -960,27 +960,27 @@ export default function App() {
             )}
           </div>
         </div>        {/* Dynamic Album & Visual Brand Center */}
-        <div className="relative w-full aspect-square sm:aspect-[4/4.5] rounded-[20px] sm:rounded-[24px] border border-white/[0.05] bg-gradient-to-b from-black/60 to-black/90 overflow-hidden mb-5 sm:mb-6 group shadow-[0_0_40px_rgba(0,0,0,0.5)_inset] flex flex-col items-center justify-center">
+        <div className="relative w-full aspect-square rounded-[24px] border border-white/[0.05] bg-gradient-to-b from-black/60 to-black/90 overflow-hidden mb-7 group shadow-[0_0_40px_rgba(0,0,0,0.5)_inset] flex flex-col items-center justify-center transition-all duration-500">
           <canvas
             ref={albumCanvasRef}
             className="absolute inset-0 w-full h-full object-cover mix-blend-screen opacity-80"
           />
           {/* Core Brand Mark */}
-          <div className="z-10 flex flex-col items-center justify-center mt-[-10px] pointer-events-none select-none">
-            <h2 className="font-display text-5xl sm:text-[3.5rem] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/95 to-white/30 drop-shadow-2xl">
+          <div className="z-10 flex flex-col items-center justify-center mt-[-8px] pointer-events-none select-none">
+            <h2 className="font-display text-[2.75rem] sm:text-[3.25rem] font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white/95 to-white/40 drop-shadow-md">
               Miadio
             </h2>
             <div className="flex items-center gap-2 mt-2">
-              <div className="w-1 h-1 rounded-full bg-[var(--emotion-color)]/60 animate-pulse" />
-              <div className="w-6 h-0.5 bg-gradient-to-r from-[var(--emotion-color)] to-transparent rounded-full shadow-[0_0_8px_var(--emotion-glow)]" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--emotion-color)]/80 animate-pulse" />
+              <div className="w-6 h-[2px] bg-gradient-to-r from-[var(--emotion-color)] to-transparent rounded-full opacity-80" />
             </div>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent flex flex-col justify-end p-4">
-            <h1 className="font-display text-lg font-medium text-white/90 leading-tight tracking-wide mb-0.5 transition-colors duration-500">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent flex flex-col justify-end p-5 overflow-hidden">
+            <h1 className="font-display text-base font-medium text-white/90 leading-tight tracking-wide mb-1 transition-colors duration-500 truncate w-full">
               {isMicActive ? 'Ambient Mic' : isHostActive ? 'AI Assistant Speaking' : activeTrack?.name || 'Silent Wave'}
             </h1>
-            <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-tight transition-colors duration-500">
+            <p className="text-[10px] font-mono text-white/40 uppercase tracking-widest leading-tight transition-colors duration-500 truncate w-full">
               {isMicActive ? 'Listening to microphone' : isHostActive ? 'Generative Broadcast' : activeTrack?.artist || 'Acoustic Engine'}
             </p>
           </div>
@@ -988,7 +988,7 @@ export default function App() {
           {/* Quick full-screen zen button overlay */}
           <button
             onClick={() => setIsZen(true)}
-            className="absolute top-4 right-4 p-2 py-1.5 rounded-lg bg-black/40 hover:bg-black/80 border border-white/5 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all text-zinc-400 hover:text-white flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest cursor-pointer"
+            className="absolute top-4 right-4 p-2 py-1.5 rounded-lg bg-black/40 hover:bg-black/80 active:scale-95 border border-white/5 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all text-zinc-400 hover:text-white flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-widest cursor-pointer"
           >
             <ZoomIn className="w-3.5 h-3.5" />
             Zen Mode [Z]
@@ -1032,7 +1032,7 @@ export default function App() {
         )}
 
         {/* Player controls deck */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <button
             onClick={(e) => {
               if (isHostActive) {
@@ -1047,7 +1047,7 @@ export default function App() {
                 handleAIHost('intro', e as any);
               }
             }}
-            className={`p-3.5 rounded-full transition-all outline-none cursor-pointer duration-300 ${
+            className={`w-10 h-10 flex items-center justify-center rounded-full transition-all active:scale-95 outline-none cursor-pointer duration-300 ${
               isHostActive
                 ? 'bg-[var(--emotion-color)]/20 text-white shadow-md shadow-[var(--emotion-color)]/20 animate-pulse'
                 : aiMode !== 'off'
@@ -1057,18 +1057,18 @@ export default function App() {
             title={`AI Mode: ${aiMode.toUpperCase()} (Click to change | Right-click for intro)`}
           >
             {aiMode === 'dj' ? (
-              <AudioWaveform className={`w-5 h-5 ${isHostActive ? 'animate-pulse' : ''}`} />
+              <AudioWaveform className={`w-4.5 h-4.5 ${isHostActive ? 'animate-pulse' : ''}`} />
             ) : aiMode === 'assistant' ? (
-              <Orbit className={`w-5 h-5 ${isHostActive ? 'animate-bounce' : ''}`} />
+              <Orbit className={`w-4.5 h-4.5 ${isHostActive ? 'animate-bounce' : ''}`} />
             ) : (
-              <Circle className="w-5 h-5" />
+              <Circle className="w-4.5 h-4.5" />
             )}
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={() => handleSkip(-1)}
-              className="p-3 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.01] hover:bg-white/[0.04] active:scale-95 text-zinc-400 hover:text-white transition-all cursor-pointer"
               title="Prev Track"
             >
               <SkipBack className="w-4 h-4 fill-zinc-450" />
@@ -1076,19 +1076,19 @@ export default function App() {
 
             <button
               onClick={() => handleTogglePlay()}
-              className="w-12 h-12 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 shadow-lg shadow-[var(--emotion-glow)] select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer"
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[var(--emotion-color)] text-black flex items-center justify-center hover:opacity-95 select-none hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
               title="Play / Pause [Space]"
             >
               {isPlaying ? (
-                <Pause className="w-5 h-5 fill-black stroke-black" />
+                <Pause className="w-5 h-5 sm:w-6 sm:h-6 fill-black stroke-black" />
               ) : (
-                <Play className="w-5 h-5 fill-black ml-1 stroke-black" />
+                <Play className="w-5 h-5 sm:w-6 sm:h-6 fill-black ml-1 stroke-black" />
               )}
             </button>
 
             <button
               onClick={() => handleSkip(1)}
-              className="p-3 rounded-full bg-white/[0.01] hover:bg-white/[0.04] text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.01] hover:bg-white/[0.04] active:scale-95 text-zinc-400 hover:text-white transition-all cursor-pointer"
               title="Next Track"
             >
               <SkipForward className="w-4 h-4 fill-zinc-450" />
@@ -1101,10 +1101,10 @@ export default function App() {
               const pick = styles[Math.floor(Math.random() * styles.length)];
               handleSelectStyle(pick.id);
             }}
-            className="p-3.5 rounded-full bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-transparent text-zinc-500 hover:text-white hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
             title="Morph Random Palette"
           >
-            <Sparkles className="w-5 h-5" />
+            <Sparkles className="w-4.5 h-4.5" />
           </button>
         </div>
       </div>
